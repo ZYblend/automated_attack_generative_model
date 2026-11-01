@@ -1,0 +1,282 @@
+% Detection and localization (Ali)
+% \begin{enumerate}
+%     \item Definitions/description: Please clarify anomaly detection and localization separately. Detection is to identify if there is an attack on measurements. Localization requires to identify the location of attacks.
+%      the term \texttt{attack location} refers to sensor channels (or indices) through which the attack signals are added to the system, and the term \texttt{localization} refers to the algorithmic process of estimating the attack location for a give CPS.
+%     \item Describe the data generation process:
+%     \begin{itemize}
+%         \item randomize attack location 
+%         \item GM generate \textcolor{blue}{FDIA} for that support 
+%         \item Package the data to train a multi-class MLP as the initial localization: (get confidence) network structure, loss function, training algorithm
+%         \item Attack pruning for improved resiliency: Bring results from previous papers 
+%     \end{itemize}
+% \end{enumerate}
+
+%%%%%%% Definitions/description (Yu)
+\iffalse
+{\color{red}\textbf{A little motivation to connect this section to the previous one. We already have (Model Development) which built physics-based model for the discriminator in GM training  for (Automated Attack Generation). How does this section fit into that narrative? Use one or two simple very clear sentences for this.}}
+\fi
+
+Through an automated attack generation by a well-trained generative model, an adversarial training dataset could be \textcolor{blue}{generated} and used to improve the precision of the \textcolor{blue}{supervised learning-based} attack detection and localization algorithm. In this section, \textcolor{blue}{a detection and localization algorithm} is given by training a multi-layer perceptron (MLP) on the generated attack dataset. In addition, by analyzing the uncertainty \textcolor{blue}{of} the MLP's output, a pruning algorithm is proposed to improve the localization precision further.
+
+The term \texttt{attack location} refers to sensor channels (or indices) through which the attack signals are added to the system. Let $\mathcal{T}$ denote the actual attack support, then we define its indicator element-wise as:
+ \begin{equation} \label{equ:support}
+     \mathbf{q}_i\left\{
+     \begin{array}{lr}
+     0 &\quad\text{if}\hspace{0.2cm} i \in \mathcal{T} \\
+     1 &\quad\text{otherwise}.
+     \end{array}
+     \right.
+ \end{equation}
+ 
+ Next, the definitions of detection and localization are given:
+ \begin{definition}[Detection]
+Given a measurement vector $\mathbf{y} \in \mathbb{R}^m$, detection is a function $D:\mathbb{R}^m \rightarrow \{0,1\}$ whose output $D(\mathbf{y})$ indicates the existence of attack signal in the input $\mathbf{y}$.
+ \end{definition}
+ 
+ \begin{definition}[Localization]
+ Given a measurement vector $\mathbf{y} \in \mathbb{R}^m$, localization is a function $L:\mathbb{R}^m \rightarrow \{0,1\}^m$ whose output indicates detection result for each measurement channel. In particular, \textcolor{blue}{it is an estimate $\hat{\mathcal{T}}$ of the actual attack support $\mathcal{T}$. Its indicator $\hat{\mathbf{q}}$ is defined similarly to \eqref{equ:support}, using $\hat{\mathcal{T}}$}
+ \end{definition}
+
+%%%%%%% Describe the data generation process:  
+% 1. randperm to randomize attack location,  (Yu)
+
+\iffalse
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.55]{MLP_training.png}
+    \caption{Diagram of Training data generation process for multi-class MLP}
+    \label{fig:MLP_training}
+\end{figure}
+\fi
+
+
+% 2. GM generate \textcolor{blue}{FDIA} for that support (Yu)
+
+
+
+% 3. Package the data to train a multi-class MLP as the localization algorithm: (get confidence) (Ali)
+\iffalse
+{\color{red}\textbf{This MLP section needs to be redone completely. Please connect with the paper. Currently, it reads like a class note. This is a research article. Do NOT write as if you are teaching the reader what MLP is. But write as we are applying MLP to the problem. So, the equations, language and training description should connect with the rest of the paper. Also eqn (19) seems incomplete. What is it? Please put in perspective. Specifically answer the following questions in your write up:}
+\begin{itemize}
+    \item What do we want to achieve and why is MLP a good choice?
+    \item What is the equation that describe the input-output relationship of the particular MLP for this paper? --  Make the equation connect with the rest of the paper. For instance, it seems $f$ needs to be $\hat{\mathbf{q}}$?
+    \item How is the training data generated. You need to describe this very simply and clearly.
+    \item How will the trained MLP be used within the resilient algorithm suite?
+\end{itemize}
+}
+
+Multilayer Perceptron (MLP) is used to detect \textcolor{blue}{FDIAs}. MLP is a special feed-forward neural networks where the information travels in one direction through all layers. It consists of several layers of nodes: an input layer, a hidden layer, and an output layer. MLPs are capable identifying high dimension non-linearly separable features. The output for a single perceptron in an MLP is given by: 
+\begin{equation}
+    f= \varphi (\sum_{i=1}^{n} w_is_i+b)\vspace{-0.07in},
+\end{equation}
+where $\varphi$ is the non-linear activation function, $f$ is the estimated output from the activation function, $w$ is the weight, $s_i$ is the input variable, $b$ is the bias, and $n$ is the input dimension. 
+The activation function is a crucial feature of deep learning algorithms as it determines if and to what extent a neuron output should be considered. For this paper, Rectified linear unit (RELU), Sigmoid, and hyperbolic tangent are used \cite{glorot2010understanding}. Cross-entropy loss is utilized to evaluate the detection of the MLP classification and can be calculated as:  
+
+% \hl{The training is done by searching for the parameters $w_{ji}$, $b_i$ that minimizes the experimental loss functional} 
+\begin{equation} \label{equ:MLP_loss}
+-\sum_{i=1}^{N}\:\: (y_i \log (p_i)+(1-y_i) \log (1-p_i))
+\end{equation}
+
+% \begin{equation}
+%     F(\mathbf{\omega},b,\{\mathcal{S},\mathcal{Y}\}) = \sum\limits_{j=1}^{M_{Tr}}{\left(y_j-\varphi (\sum_{i=1}^{n} w_{ji}{s_j}_i+b_j)\right)^2}
+% \end{equation}
+\fi
+
+\textcolor{blue}{As universal function approximators}, shown in Cybenko's theorem \cite{cybenko1989approximation}, MLPs are used to describe mathematical models via a regression scheme. Attack detection and localization is a multi-line binary classification task. With adequate training dataset generated by the automated attack generator, MLP's advantages of being a \textcolor{blue}{supervised} learning network could be fully utilized.
+
+The MLP used in this paper is a three-layer neural network containing two \emph{LeakyReLU} hidden layers and one \emph{Sigmoid} output layer, and the final classification outputs are $0$ (for attack) if the corresponding MLP output is less than $0.5$, \textcolor{blue}{and $1$ (for no attack) otherwise}. The output layer's size is the same as the input size and equal to the number of attacks. Consequently, the MLP is given by
+\begin{equation}\label{equ:MLP}
+    g(\mathbf{y}; \boldsymbol{\theta}) \triangleq \phi \left(\sum_{i=1}^{n} w_i\mathbf{y}_i+b\right),
+\end{equation}
+where $\phi$ is the activation function of the output layer and $\boldsymbol{\theta}$ is a vector of tunable weights and biases.
+Then, the localization output is given by
+\begin{equation}\label{equ:classification}
+    \hat{\mathbf{q}}_i=\left\{
+     \begin{array}{lr}
+     1 &\quad\text{if}\hspace{0.2cm} g({\mathbf{y}}_i;\boldsymbol{\theta})\geq 0.5 \\
+     0 &\quad\text{otherwise}.
+     \end{array}
+     \right.
+\end{equation}
+  
+Next, a supervised learning algorithm, via back propagation, is used to train the MLP \textcolor{blue}{using the} binary cross-entropy loss function:
+\begin{align}\nonumber
+    J(\boldsymbol{\theta}) &= \frac{1}{N}\sum_{i=1}^N\left( \mathbf{q}^{(i)}\log g({\mathbf{y}^{(i)}};\boldsymbol{\theta}) \right.\\\label{equ:MLP_loss}  
+    &\hspace{1.5cm}\left. +(\mathbf{1}-\mathbf{q}^{(i)};\boldsymbol{\theta}) \log (\mathbf{1}-g({\mathbf{y}^{(i)}};\boldsymbol{\theta}))\right),
+\end{align}
+where $(\mathbf{y}^{(i)}, \mathbf{q}^{(i)})$ is the $i$th training data, and $N$ is the total number of data points.
+
+
+
+%%%%%%%% Attack pruning for improved resiliency: Bring results from previous papers (Yu)
+\iffalse
+{\color{red}\textbf{There seems to be a disconnect from the MLP section. Start by motivating the need for uncertainty modeling. We need a brief discussion of the purpose of the pruning algorithm.}
+\begin{enumerate}
+    \item Why is uncertainty model needed? 
+    \item What will the uncertainty model be used for? -- to develop the pruning algorithm
+    \item Continue with the rest of the development and end with a very clear and concise description of how the pruning algorithm will be used in the resilient estimation.
+    \item Since it is impossible to completely describe the pruning process here, refer the reader to our earlier paper on the topic and make sure what you have here is a good SUMMARY. Omit details like Lemma V.1. I know you used the lemma because of $\mathbf{r}(k)$ in the $l_\eta$ equation. You can just use where clause to state $\mathbf{r}(k)$ instead of the Lemma. The Lemma will make it difficult to follow the paper because there is no proof and readers cannot imagine the proof based on this paper -  a lot of missing ingredients.
+\end{enumerate}
+}
+\fi
+Since the MLP-based attack detection and localization method described above is a multi-line binary classification, the agreement between the localization result $\hat{\mathbf{q}}$ and the actual attack support $\mathbf{q}$ can be described by a Bernoulli distributed agreement variable $\epsilon_i \sim \mathcal{B}(1,\mathbf{p}_i)$ \textcolor{blue}{given by}
+ \begin{equation} \label{equ:uncertainty_model}
+     \mathbf{q}_i=\epsilon_i\hat{\mathbf{q}}_i+(1-\epsilon_i)(1-\hat{\mathbf{q}}_i),
+ \end{equation}
+ where $\mathbf{p}_i= \mathbb{E}[\epsilon_i] = \textsf{Pr}\left\{\epsilon_i = 1\right\}$ is the confidence of the localization algorithm at $i$ channel, which is often obtained by the true rate in \emph{Receiver Operator Characteristic} (ROC) of the algorithm. 
+ 
+ \iffalse
+ $\mathbf{q}, \hat{\mathbf{q}}$ are indicator of unknown actual support prior $\mathcal{T}$ and predicted support prior $\hat{\mathcal{T}}$ by localization algorithm respectively, defined element-wise as:
+  \begin{equation} \label{equ:support}
+     \mathbf{q}_{i}=\left\{
+     \begin{array}{lr}
+     0 &\quad\text{if}\hspace{0.2cm} i \in \mathcal{T} \\
+     1 &\quad\text{otherwise}.
+     \end{array}
+     \right.,
+     \hat{\mathbf{q}}_{i}=\left\{
+     \begin{array}{lr}
+     0 &\quad\text{if}\hspace{0.2cm} i \in \hat{\mathcal{T}} \\
+     1 &\quad\text{otherwise}.
+     \end{array}
+     \right.
+ \end{equation}
+ \fi
+ 
+Consequently, the precision of the resulting support prior indicator $\hat{\mathbf{q}}$ is defined as follows:
+  \begin{definition}[Positive Prediction Value, Precision, $\textsf{PPV}$ \cite{fawcett2006introduction}]\label{Def:PPV_def}
+Given an estimate $\hat{\mathbf{q}}\in\{0,1\}^{N}$ of an unknown attack support indicator $\mathbf{q}\in\{0,1\}^{N  }$, $\textsf{PPV}$ is the proportion of $\mathbf{q}$ that is correctly identified in $\hat{\mathbf{q}}$. It is given by
+\begin{equation}\label{equ:PPV_def}
+\textsf{PPV} =  \frac{\|\mathbf{q} \odot \hat{\mathbf{q}} \|_{0}}{\|\hat{\mathbf{q}}\|_{0}} .
+\end{equation}
+\end{definition}
+ 
+ \iffalse
+ \begin{lemma}(\cite{zheng2020attack})  \label{Lem:PBD_CDF}
+Given mutually independent Bernoulli random variables $\epsilon_i \sim \mathcal{B}(1,\mathbf{p}_i)$, $i=1,\cdots,Tm$, then
+  \begin{equation}\label{equ:PMF}
+      \textsf{Pr}\left\{\sum_{i=1}^{Tm} \epsilon_{i} = k-1 \right\}=\mathbf{r}(k), k=1,\cdots,Tm+1
+  \end{equation}
+  where,
+  $$ \mathbf{r} = \beta \cdot \begin{bmatrix}-\mathbf{s}_1\\1 \end{bmatrix} * \begin{bmatrix}-\mathbf{s}_2\\1 \end{bmatrix} * \cdots * \begin{bmatrix}-\mathbf{s}_{Tm}\\1 \end{bmatrix}
+  $$
+  with
+  $ \beta =\displaystyle\prod_{i=1}^{Tm} \mathbf{p}_{i}, \hspace{2mm} \mathbf{s}_i = -\frac{1-\mathbf{p}_{i}}{\mathbf{p}_{i}}
+  $
+\end{lemma}
+\fi
+
+Next, with the attack localization result $\hat{\mathcal{T}}$, the estimated support of safe nodes can be represented as $\hat{\mathcal{T}}^c = \{j_1, j_2,\cdots, j_{|\hat{\mathcal{T}}^c|}\}$. A \emph{Pruning Algorithm} is proposed to prune the most \textcolor{blue}{probable} erroneous localization results in $\hat{\mathcal{T}}^c$. 
+
+\noindent The first step is to obtain a trust \textcolor{blue}{length} $l_{\eta}(\leq Tm)$ based on the confidence of the localization results $\mathbf{p}$.  Given a reliability level $\eta \in (0,1)$, the trust \textcolor{blue}{length} $l_{\eta}$ is \textcolor{blue}{an integer} defined as the maximum number of safe nodes correctly localized in $\hat{\mathcal{T}}^c$ with a probability of at least $\eta$\textcolor{blue}{;}
+\begin{equation}\label{equ:trust_number_def}
+    l_{\eta} \triangleq \textsf{max} \left\{k \biggl\lvert \textsf{Pr} \left\{\sum_{i\in \hat{\mathcal{T}}^c} \epsilon_i \geq k \right\}\geq \eta \right\}.
+\end{equation}
+Let
+\begin{equation} \label{equ:r_tau_hat_c}
+    \bar{\mathbf{r}} \triangleq \begin{bmatrix}r_{0} \\ r_{1} \\\vdots \\ r_{|\hat{\mathcal{T}}^c|}\end{bmatrix} = \displaystyle\prod_{i=1}^{|\hat{\mathcal{T}}^c|} \mathbf{p}(j_i)  \begin{bmatrix}-s_{j_1}\\1 \end{bmatrix} * \begin{bmatrix}-s_{j_2}\\1 \end{bmatrix} * \cdots * \begin{bmatrix}-s_{j_{|\hat{\mathcal{T}}^c|}}\\1 \end{bmatrix},
+\end{equation}
+where $s_{j_i} = -\frac{1-\mathbf{p}_i}{\mathbf{p}_i}$.
+Then, \textcolor{blue}{$\displaystyle\textsf{Pr}\left\{\sum_{i\in\hat{\mathcal{T}}^c} \epsilon_i = k\right\} = \bar{\mathbf{r}}_k$.}
+Thus \eqref{equ:trust_number_def} becomes\footnote{\textcolor{blue}{$\displaystyle\textsf{Pr}\left\{\sum_{i \in \hat{\mathcal{T}}^{c}} \epsilon_{i} \leq k\right\} \leq 1-\eta$ is equivalent to $\displaystyle\textsf{Pr}\left\{\sum_{i \in \hat{\mathcal{T}}^{c}} \epsilon_{i} = 0\right\} + \textsf{Pr}\left\{\sum_{i \in \hat{\mathcal{T}}^{c}} \epsilon_{i} = 1\right\} +\cdots \textsf{Pr}\left\{\sum_{i \in \hat{\mathcal{T}}^{c}} \epsilon_{i} = k\right\} \leq 1-\eta$ since $k$ could only be integer.}}
+\textcolor{blue}{
+\begin{equation}\label{equ:trust_number}
+\begin{aligned}
+l_{\eta}&= \textsf{max} \left\{k \biggl\lvert \textsf{Pr}\left\{\sum_{i \in \hat{\mathcal{T}}^{c}} \epsilon_{i} \leq k\right\} \leq 1-\eta\right\}  \\
+&= \textsf{max} \left\{k \biggl\lvert \sum_{i=0}^{k} \bar{\mathbf{r}}_i \leq 1-\eta \right\}.
+\end{aligned}
+\end{equation}}
+
+
+\noindent The second step is to obtain a \emph{Pruned Support Prior} $\hat{\mathcal{T}}^{c}_{\eta}$ of size $l_{\eta}$\textcolor{blue}{. This is done through the robust extraction:}
+\begin{equation}    \label{equ:pruning_alg}
+    \hat{\mathcal{T}}^{c}_{\eta} =  \big\{\textsf{argsort} \downarrow (\mathbf{p} \odot g(\mathbf{y};\boldsymbol{\theta}))\big\}_{1}^{l_{\eta}},
+\end{equation}
+where $\{\cdot\}_{1}^{l_{\eta}}$ \textcolor{blue}{denotes} an index extraction from the first elements to $l_{\eta}$ elements. To obtain a pruned support prior consistent with the model assumptions in Section ~\ref{sec:system_model}, its size should satisfy $l_{\eta}\geq k_0$, where $k_0$ is a lower bound of $\hat{\mathcal{T}}^{c}_{\eta}$ such that $(A,C_{\hat{\mathcal{T}}^{c}_{\eta}})$ is observable. This can be guaranteed by the proper choice of the reliability level $\eta$, as given in the following theorem.
+\begin{theorem}\label{Thm:eta_upper_bound}
+Given a measurement redundancy preservation parameter $k_0>0$, the size of pruned support prior satisfies $l_{\eta}\geq k_0$ if
+\begin{equation}\label{equ:eta_upper_bound}
+\eta \leq  1- \sum_{i=0}^{|\hat{\mathcal{T}}^c|} e^{k_0-i} \bar{\mathbf{r}}_i,
+\end{equation}
+where $\bar{\mathbf{r}}$ is given by \eqref{equ:r_tau_hat_c}, and $\hat{\mathcal{T}}^c$ is the estimated support of safe nodes from the attack localization algorithm.
+\end{theorem}
+\begin{proof}
+According to \eqref{equ:trust_number_def}, a sufficient condition for $l_{\eta} \geq k_0$ is
+\begin{align*}
+\textsf{Pr} \left\{\sum_{i\in \hat{\mathcal{T}}^c} \epsilon_{i} \geq k_0 \right\} &\geq \eta,
+\end{align*}
+which is equivalent to:
+\begin{align*}
+\textsf{Pr} \left\{k_0 - \sum_{i\in \hat{\mathcal{T}}^c} \epsilon_{i}  \leq 0 \right\}&\geq \eta
+\end{align*}
+and
+\begin{align}
+    \textsf{Pr} \left\{k_0-\sum_{i\in \hat{\mathcal{T}}^c} \epsilon_{i}  \geq 0 \right\}&\leq 1-\eta. \label{equ:trust_num_rewritte}
+\end{align} 
+According to Lemma~\ref{Lem:chance_constrain}, let $z = k_0-\sum_{i\in \hat{\mathcal{T}}^c} \epsilon_{i}$, and take $\Phi(z) = \exp(z)$ yields a sufficient condition for \eqref{equ:trust_num_rewritte} as
+\begin{align} 
+&\mathbb{E}\left[\exp\left(k_0-\sum_{i\in \hat{\mathcal{T}}^c} \epsilon_{i}\right)\right] \leq 1-\eta, \nonumber \\
+\equiv\hspace{2mm}& e^{k_0}\mathbb{E}\left[\exp\left(-\sum_{i\in \hat{\mathcal{T}}^c} \epsilon_{i}\right)\right] \leq 1-\eta. \label{equ:sufficient_cond}
+\end{align}
+Since $\displaystyle\textsf{Pr}\left\{\sum_{i\in\hat{\mathcal{T}}^c} \epsilon_i = k\right\} = \bar{\mathbf{r}}_k$, it follows that
+\begin{align}
+    \mathbb{E}\left[\exp\left(-\sum_{i\in \hat{\mathcal{T}}^c} \epsilon_{i}\right)\right] &= \sum_{k =0}^{|\hat{\mathcal{T}}^c|} e^{-k}  \textsf{Pr}\left\{\sum_{i\in\hat{\mathcal{T}}^c} \epsilon_i= k\right\}\nonumber \\
+    &= \sum_{k =0}^{|\hat{\mathcal{T}}^c|} e^{-k} \bar{\mathbf{r}}_k.  \label{equ:closed_form_expression}
+\end{align}
+ Combining \eqref{equ:sufficient_cond} and \eqref{equ:closed_form_expression} yields
+\begin{equation}
+    \sum_{i=0}^{|\hat{\mathcal{T}}^c|} e^{k_0-i} \bar{\mathbf{r}}_i\leq 1-\eta.
+\end{equation}
+Finally, an upper bound on $\eta$ is obtained as \eqref{equ:eta_upper_bound}.
+\end{proof}
+\begin{remark}\label{rmk:performance_require}
+From \eqref{equ:eta_upper_bound}, it is clear that, necessarily, the upper bound should be strictly positive. This yields the following pruning requirement on the localization performance parameters:
+\begin{align}\label{equ:localization_performance_criterion}
+\sum\limits_{i=0}^{|\hat{\mathcal{T}}^c|}e^{-i}\bar{\mathbf{r}}_i < e^{-k_0}.
+\end{align}
+If this holds, according to the assumption $A2$, with at least $k_0$ safe nodes remaining in the pruned support prior $\hat{\mathcal{T}}^c_{\eta}$, $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ will be observable. Thus the asymptotic convergence of the estimation error is guaranteed. 
+% Thus, the resilient $\ell_2$ observer designed on $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ can estimate the state variables correctly.
+%{\color{red}We may need to check this property in the simulation section for the localization algorithm }{\color{blue}we would give theorem for the estimation error bound of resilient L2 for this concern. }{\color{red} A theorem is good. But we still need to check with the simulation. For example: What is $k_0$ for MLP1? }
+\end{remark}
+
+\iffalse
+\begin{remark}{\color{red}Remove this. First see the corrected version above.}
+According to \eqref{equ:eta_upper_bound}, it is clear that the preserved number of measurements $k_0$ through pruning has a upper bound $\sum_{i=0}^{|\hat{\mathcal{T}}^c|}\left(i-log\mathbf{r}_{\hat{\mathcal{T}}^c}(i+1)\right)$ which depends mainly on the attack localization result $\hat{\mathcal{T}}^c$. If $\hat{\mathcal{T}}^c$ covers more exact safe nodes in $\mathcal{T}^c$, then the upper bound is bigger. According to the assumption $A2$, with at least $k_0$ safe nodes remained in pruned support prior $\hat{\mathcal{T}}^c_{\eta}$, $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ is observable. 
+% Thus, the resilient $\ell_2$ observer designed on $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ can estimate state variables correctly.
+\end{remark}
+\fi
+
+\iffalse
+For pragmatic reasons, it is important to ensure that $l_{\eta} >0$ in \eqref{equ:trust_number}. This is guaranteed if $\eta$ is chosen such that at least one node is selected into the pruned set. Formally, this condition is given by:
+\begin{equation}\label{equ:condition_for_eta}
+    \eta \leq \max_{i\in \hat{\mathcal{T}}^c}{(\mathbf{p}_i)}
+\end{equation} 
+\fi
+
+\noindent Moreover, it was shown in \cite{zheng2021Resilient} that the precision $\textsf{PPV}_{\eta}$ of the pruned support prior $\hat{\mathcal{T}}^c_{\eta}$ given by \eqref{equ:pruning_alg} achieves
+\begin{equation}\label{equ:precision_after_pruning}
+    \textsf{Pr}\left\{\textsf{PPV}_{\eta} =1 \right\} \geq \eta.
+\end{equation} 
+This indicates that, with the probability of at least $\eta$, the measurement nodes contained in $\hat{\mathcal{T}}^c_{\eta}$ are all safe, and $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ is observable according to Remark~\ref{rmk:performance_require}. Thus, with the probability of at least $\eta$, \textcolor{blue}{exact state} estimation can be achieved by using $\ell_2$ observer designed based on $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$.
+Finally, \textcolor{blue}{Algorithm~\ref{Alg:ADL_AAG_P}} summarizes the attack detection and localization using automated attack generation and pruning operation.
+\begin{algorithm}[h!]\label{Alg:ADL_AAG_P}
+\SetAlgoLined
+\uppercase\expandafter{\romannumeral1}.\hspace{2mm}\textbf{Offline: Dataset generation and training.}\\
+\begin{enumerate}
+    \item Given time horizon $T$, prepare $M_1, M_2$ matrices for physics-based \textcolor{blue}{discriminators} $\leftarrow$ \eqref{equ:M1}, \eqref{equ:M2}.
+    \item Given the number of attacks $|\mathcal{T}|$, randomize attack support $\mathcal{T}$, and obtain its indicator $\mathbf{q}$ $\leftarrow$ \eqref{equ:support}.
+    \item Given attack indexes $\alpha, \epsilon$, train the generative model (GM) by solving the optimization problem in \eqref{equ:training_GM}.
+    \item Generate attack dataset $\{Y\}$ using the trained GM. Evaluate generated attack dataset via simulation.
+    \item Return the effective subset of attack dataset as the training dataset $\{Y, \mathbf{q}\}$.
+    \item Train the MLP in \eqref{equ:MLP} using the generated dataset $\{Y, \mathbf{q}\}$ via backpropagation.
+\end{enumerate}
+
+\uppercase\expandafter{\romannumeral2}.\hspace{2mm}\textbf{Online: Localization and pruning}\\
+\begin{enumerate}
+    \item Input real-time measurements $\mathbf{y}$, obtain the classification result $\hat{\mathbf{q}}$ $\leftarrow$ \eqref{equ:MLP}, \eqref{equ:classification};
+    \item \textcolor{blue}{Obtain} the pruned support prior $\hat{\mathcal{T}}^{c}_{\eta} (\hat{\mathbf{q}}_{\eta})$ $\leftarrow$ \eqref{equ:trust_number}, \eqref{equ:pruning_alg}.
+\end{enumerate}
+
+\textbf{Output}: $\hat{\mathcal{T}}^{c}_{\eta}$ (pruned support prior)
+\caption{Attack detection and localization with automated attack generation and pruning}
+\end{algorithm}

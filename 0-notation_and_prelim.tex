@@ -1,0 +1,34 @@
+The following notations and definitions are used throughout the paper: ${\mathbb R}, {\mathbb R}^n, {\mathbb R}^{n \times m}$ denote the space of real numbers, \textcolor{blue}{real vectors of length $n$,} and real matrices of $n$ rows and $m$ columns respectively. ${\mathbb R}_{+}$ denotes the space of positive real numbers. Normal-face lower-case letters $(e.g.\hspace{1mm} x \in {\mathbb R})$ are used to represent real scalars, bold-face lower-case letters $(e.g.\hspace{1mm} \mathbf{x} \in {\mathbb R}^n)$ represent vectors, while normal-face upper-case letters $(e.g.\hspace{1mm} X \in {\mathbb R}^{n \times m})$ represent matrices. $X^{\top}$ denotes the transpose of the matrix $X$. The spectral radius of the square matrix $X$ is denoted by $\rho(X)$. $X^\dagger\triangleq\left(X^\top X\right)^{-1}X^\top$ denotes the Moore-Penrose inverse. $\mathbf{1}_n$ and $I_n$ denote the vector of ones and the identity matrix of size $n$ respectively. Let $\mathcal{T} \subseteq \{1,\dots, n\}$, then, for a matrix $X \in {\mathbb R}^{m \times n}$, $X_{\mathcal{T}} \in {\mathbb R}^{|\mathcal{T}| \times m}$ is the sub-matrix obtained by extracting the 
+rows of $X$ corresponding to the indices in $\mathcal{T}$. $\mathcal{T}^c$ denotes the \textcolor{blue}{complement of a set $\mathcal{T}$,} and the universal set on which it is defined will be clear from the context. We use $I_T$ \textcolor{blue}{(or simply $I$ when $T$ is clear from context)} to represent a $T$-time window $[i-T+1,i]$. In the same vein, $I-1$ is used to denote the time window $[i-T,i-1]$ accordingly. The support of a vector $\mathbf{x} \in {\mathbb R}^{n}$ \textcolor{blue}{is the set} of the indices of nonzero entries in $\mathbf{x}$, defined as
+$ \textsf{supp}(\mathbf{x}) \triangleq \{i\subseteq \{1,\dots, n\}|\mathbf{x}_{i} \neq 0\}
+$. A vector $\mathbf{x}\in\mathbf{R}^n$ is said to be $k$-sparse if $|\textsf{supp}(\mathbf{x})| \le k$, and $\Sigma_{k}$ denotes the \textcolor{blue}{subset of $k$-sparse} vectors. \textcolor{blue}{A moving-horizon vector $\mathbf{x}_I \in \Sigma_k$ is given by $\mathbf{x}_I = \begin{bmatrix}\mathbf{x}_1^{\top} & \cdots & \mathbf{x}_T^{\top} \end{bmatrix} \in \mathbb{R}^{nT}$, where each constituent vector $\mathbf{x}_j \in \Sigma_k, j\in I$.  $\textsf{argsort} \downarrow (\mathbf{x}
+)$} denotes a function that returns the sorted indices of vector $\mathbf{x}$ in descending order of the magnitude of $\mathbf{x}_i$. The symbol $\odot$ denotes element-wise multiplication of two vectors\textcolor{blue}{, as in} $\mathbf{z} = \mathbf{x} \odot \mathbf{y}$, where $\mathbf{z}_i = \mathbf{x}_i \mathbf{y}_i$. The operator $\|\mathbf{z}\|_{1, \mathbf{w}} \triangleq \sum_{i=1}^n \mathbf{w}_i\mathbf{z}_i$ is a weighted $1$-norm of a vector $\mathbf{z} \in {\mathbb R}^{n}$\textcolor{blue}{,} with the weight vector $\mathbf{w} \in \mathbb{R}^n$. A continuous \textcolor{blue}{function $\phi:[0,a) \rightarrow [0,\infty)$} is said to belong to class $\mathcal{K}$ if it is strictly increasing and \textcolor{blue}{$\phi(0)=0$.} Both $e^{x}$ and $\exp(x)$ are used to represent the exponential function. The symbol $*$ denotes the convolution operator of two vectors; given two vectors $\mathbf{u} \in \mathbb{R}^m$ and $\mathbf{v} \in \mathbb{R}^n$, 
+$$ \mathbf{u} * \mathbf{v} \triangleq \sum_j \mathbf{u}_j \mathbf{v}_{k+1-j}.
+$$
+
+\noindent The symbol $\mathbb{E}$ denotes the expectation operator of a random variable. $z \sim \mathcal{B}(1,p)$ represents a Bernoulli distributed random variable $z$\textcolor{blue}{, with $\mathbb{E}[z]=p$. Thus,} the sum of independent Bernoulli random variables $\{z_1,z_2,\cdots,z_N\}$ with $z_i \sim \mathcal{B}(1,p_i)$ satisfies \textcolor{blue}{the} Poisson-binomial distribution, and the closed-form expression of the probability density function (pdf) of $\sum_i z_i$ is given by \cite{fernandez2010closed}:
+  \begin{equation}\label{equ:PMF}
+      \textsf{Pr}\left\{\sum_{i=1}^{N} z_{i} = k \right\}=\mathbf{r}_k,\hspace{2mm} k=0,\cdots,N,
+  \end{equation}
+where
+\begin{equation} \label{equ:pdf_r}
+     \mathbf{r} = \displaystyle\prod_{i=1}^{N} p_{i} \cdot \begin{bmatrix}-s_1\\1 \end{bmatrix} * \begin{bmatrix}-s_2\\1 \end{bmatrix} * \cdots * \begin{bmatrix}-s_{N}\\1 \end{bmatrix},
+\end{equation}
+with $s_i = -\frac{1-p_{i}}{p_{i}}$. The following lemma presents a result that will be useful for \textcolor{blue}{subsequent} developments in this paper.
+\begin{lemma}\label{Lem:chance_constrain}
+\textcolor{blue}{For any} non-decreasing convex function $\Phi:\mathbb{R} \rightarrow \mathbb{R}_{+}$ with $\Phi(0) = 1$, $$\mathbb{E}[\Phi(z)] \geq \textsf{Pr}\left\{z>0\right\}.$$
+\end{lemma}
+\begin{proof}
+Based on the definition of expectation, 
+\begin{align*}
+\mathbb{E}[\Phi(z)] &= \sum\limits_{x \in \mathbb{R}}\Phi(x)\textsf{Pr}\left\{z =x\right\}\\
+ &= \sum_{x\leq 0}\Phi(x)\textsf{Pr}\left\{z =x\right\} +\sum_{x> 0}\Phi(x)\textsf{Pr}\left\{z =x\right\}\textcolor{blue}{.}
+\end{align*}
+Since $\Phi(x)>0$, then 
+$$\mathbb{E}[\Phi(z)] \geq \sum_{x> 0}\Phi(x)\textsf{Pr}\left\{z =x\right\}.$$ Also, since $\Phi$ is non-decreasing and $\Phi(0)=1$, we have that \textcolor{blue}{$\Phi(x) \geqslant 1 \hspace{2mm} \forall x>0$. Thus, }
+\begin{align*}
+    \mathbb{E}[\Phi(z)] &\geq \sum_{x> 0}\textsf{Pr}\left\{z =x\right\} = \textsf{Pr}\left\{z>0\right\}.
+\end{align*}
+
+\end{proof}
+

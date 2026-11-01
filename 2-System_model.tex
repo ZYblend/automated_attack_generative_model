@@ -1,0 +1,72 @@
+%%%%%%%%%%%%%%%%%% System model (Workshop paper, use the IEEE bus system) %%%%%%%% (Yu)
+The \textcolor{blue}{following model} is \textcolor{blue}{used} to describe the physical \textcolor{blue}{process} of a CPS:
+\begin{equation}\label{equ:physical_model}
+\begin{aligned}
+    \mathbf{x}_{i+1} &= A\mathbf{x}_i+B\mathbf{u}_i\\
+    \mathbf{y}_i &= C\mathbf{x}_i\\
+ \end{aligned}
+\end{equation}
+where $\mathbf{x}_i \in \mathbb{R}^n$ is the state vector, $\mathbf{u}_i \in \mathbb{R}^{p}$ the control input and $\mathbf{y}_i \in \mathbb{R}^{m_1}$ the sensor measurement. The \textcolor{blue}{appropriately dimensioned system matrices $A,B$ and $C$} are assumed to satisfy the following\textcolor{blue}{:}
+\begin{enumerate}
+    \item [A1.]{The pair $(A,B)$ is controllable}
+    \item [A2.]{There exists a positive integer $k_0 \leq m_1$ such that the pair $(A,C_{\mathcal{S}})$ is observable for all $\mathcal{S} \subset \left\{1,2,\cdots,m_1\right\}$ with $|\mathcal{S}|\geq k_0$}
+    \item [A3.]{$\rho\left(A^{T}\right)>0$, where the integer $T$ is a specified horizon parameter.}
+\end{enumerate}
+
+To estimate the system states from sensor measurements, the following receding horizon observer is considered:
+\begin{align}\label{equ:state_propogation_forward}
+    \hat{\mathbf{x}}_i = A^T\mathbf{z} + F\mathbf{u}_{I-1},
+\end{align}
+where 
+\begin{align*}
+    F = \begin{bmatrix}A^{T-1}B & A^{T-2}B &\hdots & B\end{bmatrix},
+\end{align*}
+and
+\begin{align}\label{equ:RHE}
+    \mathbf{z} &= \argmin_{\mathbf{x}\in\mathbb{R}^n}\|\mathbf{y}_{I}-H_1\mathbf{u}_{I-1} - H_0\mathbf{x}\|_2\\ \nonumber
+    &= H_0^\dagger\mathbf{y}_{I} - H_0^\dagger H_1\mathbf{u}_{I-1},
+\end{align}
+where 
+\begin{equation}\label{equ:H0_H1}
+\begin{aligned}
+H_0 & =  \begin{bmatrix}CA\\ C A^2 \\ \vdots \\ CA^{T}\end{bmatrix}\\
+H_1 & = \begin{bmatrix}CB & 0 & \cdots& 0 \\ CAB & CB& \cdots&  0\\ \vdots & \vdots & \ddots &  \vdots\\ CA^{T-1}B & CA^{T-2}B & \cdots & CB\end{bmatrix}.
+\end{aligned}\end{equation} 
+Thus,
+\begin{align}\label{equ:state_estimate}
+    \hat{\mathbf{x}}_i = A^TH_0^\dagger\mathbf{y}_{I} + \left(F-A^TH_0^\dagger H_1\right)\mathbf{u}_{I-1}.
+\end{align}
+Consequently, the following control law is considered:
+\begin{equation}\label{equ:controller}
+\begin{aligned}
+        \mathbf{u}_i &= K_p\hat{\mathbf{x}}_i,
+\end{aligned}
+\end{equation}
+where $\hat{\mathbf{x}}_i \in\mathbb{R}^n$ is the state estimate in \eqref{equ:state_estimate}, which is \textcolor{blue}{well-known} (see \cite{alessandri2003receding} for example) to achieve $\lim\limits_{i\rightarrow\infty}\left\|\hat{\mathbf{x}}_i-\mathbf{x}_i\right\|_2 = 0$, and the gain matrix $K_p$ is designed to achieve $\rho\left(A+BK_p\right)\in\left(0,\hspace{1mm}1\right)$. 
+Substituting \eqref{equ:controller} into the dynamics in \eqref{equ:physical_model} yields 
+\begin{align*}
+    \mathbf{x}_{i+1} &= A\mathbf{x}_i + BK_p\hat{\mathbf{x}}_i\\
+                     &= \left(A+BK_p\right)\mathbf{x}_i + BK_p\left(\hat{\mathbf{x}}_i-\mathbf{x}_i\right),
+\end{align*}
+which implies that
+\begin{align*}
+    \mathbf{x}_i = \left(A+BK_p\right)^i\mathbf{x}_0 + \sum\limits_{j=0}^i{\left(A+BK_p\right)^{i-j}BK_p\left(\hat{\mathbf{x}}_j-\mathbf{x}_j\right)}.
+\end{align*}
+Thus, 
+\begin{align*}
+    \sum\limits_{i=0}^\infty{\left\|\mathbf{x}_i\right\|_2}&\le\left(\sum\limits_{i=0}^\infty\rho\left(\left(A+BK_p\right)^i\right)\right)\left\|\mathbf{x}_0\right\|_2 \\&\hspace{2mm}+ \sum\limits_{i=0}^\infty\sum\limits_{j=0}^i\rho\left(\left(A+BK_p\right)^{i-j}BK_p\right)\left\|\hat{\mathbf{x}}_j-\mathbf{x}_j\right\|_2.
+\end{align*}
+\textcolor{blue}{Since $\rho(A+BK) \in (0,1)$, then $\displaystyle \sum_{i=0}^{\infty}\rho\left((A+BK)^i\right) \leq \sum_{i=0}^{\infty}\left(\rho(A+BK)\right)^i < \infty$}\footnote{\textcolor{blue}{For any $\beta\in (0,1)$, $\displaystyle \sum_{i=0}^{\infty}\beta^i=\lim_{N\rightarrow\infty}\sum_{i=0}^{N}\beta^i = \lim_{N\rightarrow\infty}\frac{1-\beta^{N+1}}{1-\beta} = \frac{1}{1-\beta}< \infty$}}. Therefore, the resulting \textcolor{blue}{closed-loop} dynamics \textcolor{blue}{satisfies} \textcolor{blue}{$$\sum\limits_{i=0}^\infty\left\|\mathbf{x}_i\right\|_2\le \alpha_0 \|\mathbf{x}_0\|_2 + \varphi\left(\sum\limits_{i=0}^\infty\left\|\hat{\mathbf{x}}_i-\mathbf{x}_i\right\|_2\right)$$ }
+for \textcolor{blue}{a} positive constant $\alpha_0<\infty$ and a class $\mathcal{K}$ functional $\varphi$. \textcolor{blue}{Since $\hat{\mathbf{x}}_i \rightarrow \mathbf{x}_i$, it follows} that the origin of the \textcolor{blue}{closed-loop} dynamics is asymptotically stable \textcolor{blue}{\cite{rawlings2017model}}.
+
+\iffalse
+Let $\tilde{\mathbf{x}}_i \triangleq \mathbf{x}_i - \hat{\mathbf{x}}_i$, then the closed loop system is given by
+\begin{align}
+    \mathbf{x}_{i+1} = \bar{A}\mathbf{x}_i - \bar{B}\tilde{\mathbf{x}}_i,
+\end{align}
+where $\Bar{A} = A+BK_p$ and $\Bar{B} = BK_p$. Iterating the difference equation above $T$ steps forward yields
+\begin{equation*}
+    \mathbf{x}_{1:T} = \begin{bmatrix}\Bar{A}\\ \Bar{A}^2 \\ \vdots \\ \Bar{A}^T\end{bmatrix}\mathbf{x}_0 + \begin{bmatrix}\Bar{B} & & &  \\ \Bar{A}\Bar{B} & \Bar{B}& &  \\ \vdots & \vdots & \ddots &  \\ \Bar{A}^{T-1}\Bar{B} & \Bar{A}^{T-2}\Bar{B} & \cdots & \Bar{B}\end{bmatrix}\tilde{\mathbf{x}}_{0:T-1}.
+\end{equation*}
+\fi
+

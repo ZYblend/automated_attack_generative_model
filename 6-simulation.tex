@@ -1,0 +1,172 @@
+In this section, the corresponding improvement of resiliency due to the automated attack generation is shown in \textcolor{blue}{simulation, by} implementing Algorithm~\ref{Alg:ADL_AAG_P} and the resilient observer in \eqref{equ:resilient_L2} on a water distribution system.
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[scale=0.37]{image/WDS.png}
+    \caption{Block diagram depiction of a water distribution system under \textcolor{blue}{FDIAs} (black solid are water pipelines, blue dotted lines are wireless data transmission lines for sensors data and control commands, orange dotted lines are attack injection route)}
+    \label{fig:water_distribution_sys}
+\end{figure}
+
+The water distribution system, shown in Fig.~\ref{fig:water_distribution_sys}, contains $10$ distributed operating tanks and $1$ storage tank. The goal is to regulate all operating tanks' water levels around desired values. The magnetic valves $V_1 - V_{10}$ at the \textcolor{blue}{inlet} of operating tanks are controlled to adjust the water level of water tanks, and the manual valves $M_1 - M_{10}$ can be manipulated, at the demand point, to use the water from the corresponding tanks. The effect of these valves is modelled as the random demands $\mathbf{d}$ in \eqref{equ:water_level_adjustment}. The valves at the storage tank are fixed at a constant opening value.
+\textcolor{blue}{For each operating tank, two sensors-water level meter and pressure sensors} ($L_1 ~ L_{10}$), are installed. The pressure sensors measure the difference of water level between adjoining tanks. The \textcolor{blue}{water levels} adjustment process is approximated by the LTI model:
+\begin{equation}\label{equ:water_level_adjustment}
+\begin{aligned}
+   \mathbf{x}_{i+1} &= A\mathbf{x}_i + B\mathbf{u}_i - \mathbf{d}_i,\\
+    \mathbf{y}_i &= C\mathbf{x}_i +\mathbf{v}_i + \mathbf{e}_i.
+\end{aligned}
+\end{equation}
+where, $\mathbf{x}, \mathbf{u} \in \mathbb{R}^{10}$, \textcolor{blue}{$\mathbf{y}, \mathbf{v} \in \mathbb{R}^{61}$} are vector of water level, control input of magnetic valves, sensor measurements, and measurement noise respectively, $\mathbf{d} \in \mathbb{R}^{10}$ is the vector of random demands, and \textcolor{blue}{$\mathbf{e} \in \mathbb{R}^{61}$} is the injected \textcolor{blue}{FDIAs}. \textcolor{blue}{For the sake of clean presentation, interested readers are directed to \url{https://github.com/ZYblend/Resilient_WDS_AutoAttackGen} for the values of system parameters $A \in \mathbb{R}^{10\times 10},B \in \mathbb{R}^{10\times 10},C \in \mathbb{R}^{61\times 10}$.} Given \textcolor{blue}{a desired} water level $\mathbf{x}_d = 0.5 * \mathbf{1}_{10}$, \textcolor{blue}{the} proportional controller \textcolor{blue}{below} is used\textcolor{blue}{;}
+$$ \mathbf{u}_i = -K(\hat{\mathbf{x}}-\mathbf{x}_d)-B^{-1}(A-I_{10})\mathbf{x}_d.
+$$ 
+The critical measurement in this scenario is the sum of all water levels of operating tanks, thus, the critical measurement matrix is given by $C_c = [1 \hspace{2mm} 1 \hspace{2mm} \cdots \hspace{2mm} 1] \in \mathbb{R}^{1\times 10}$. \textcolor{blue}{Firstly, a simulation experiment is done to assess the observability of the simulated system in order to obtain the least number of measurements from which the system states are fully observable. A Monte Carlos experiment, with $50000$ samples of randomly selected measurement subsets $\mathcal{S}$, is performed to calculated the probability of full observerability of $(A,C_{\mathcal{S}})$ using $|\mathcal{S}|$. Fig~\ref{fig:observability} shows that full observerability is preserved with $k_0 \geq 42$, corresponding to at most $30\%$ pruned measurements.}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.45]{new_sim_image/observability.png}
+    \caption{\textcolor{blue}{Observability of simulated systems. The percentage of observable $(A,C_{\mathcal{S}})$ is calculated as the ratio of the number of observable $(A,C_{\mathcal{S}})$ to the total number of samples (=50000).}}
+    \label{fig:observability}
+\end{figure}
+
+Next, we \textcolor{blue}{execute} different simulation \textcolor{blue}{scenarios}: automated attack generation, training data preparation \textcolor{blue}{with} MLP training, and Monte-Carlo simulation for resilient $\ell_2$ observer with different attack detection and localization strategies.
+
+\subsection{Automated attack generation}
+
+A fixed time step of $T_s = 0.01s$ is used and the moving-window size is set as $T = 8T_s$. With different \textcolor{blue}{numbers} of attacks, the transfer matrices $M_1, M_2$ are calculated based on the corresponding random attack support\textcolor{blue}{. Then,} the generator \textcolor{blue}{in} \eqref{equ:training_GM} is trained as shown in Fig.~\ref{fig:GM}. Due to the uncertainty in the discriminator caused by measurement noise and random demands, the threshold values are chosen from experience as \textcolor{blue}{$\alpha = 0.1, \epsilon=0.5$}. \textcolor{blue}{Fig.~\ref{fig:train_result} shows the effectiveness and detection residual of the generated attacks during training process compared to the thresholds $(\alpha, \epsilon)$. It is seen that the trained generator successfully transforms uniformly distributed inputs to feasible attacks satisfying the conditions in \eqref{equ:success_FDIA_set}.}
+\begin{figure}[!h]
+    \centering
+    \includegraphics[scale=0.6]{new_sim_image/training_result.png}
+    \caption{\textcolor{blue}{Feasibility of generated attacks during training process. $\epsilon$ is the upper bound for the detection residual, $\alpha$ is the lower bound of effectiveness.}}
+    \label{fig:train_result}
+\end{figure}
+
+\textcolor{blue}{The trained generator is then used to generate a dataset $D_\mathcal{S}(\alpha,\epsilon)$ of attacks. In order to inject the generated attacks, recursive feasibility \cite{lofberg2012oops} should be considered. An online moving-horizon attack injection scheme used here is to solve the following sample-based optimization program at each time step $i$: 
+\begin{equation} \label{equ:attack_injection}
+\begin{aligned}
+       \displaystyle\Maximize_{\mathbf{e}_i} \hspace{2mm} &\left\|M_1 \begin{bmatrix}\mathbf{e}^{-} \\ \mathbf{e}_i\end{bmatrix}\right\|_2 \\
+    \textsf{Subject to:} \hspace{2mm} & \left\|M_2 \begin{bmatrix}\mathbf{e}^{-} \\ \mathbf{e}_i\end{bmatrix}\right\|_2 \leq \epsilon \\
+    & \mathbf{e}_i \in D_\mathcal{S}(\alpha,\epsilon)
+\end{aligned}
+\end{equation}
+where $\mathbf{e}^{-}$ is the attack history during the time window $I^{-} = [i-T+1, i-1]$. Fig.~\ref{fig:generator_test_example_1} shows the performance of the generated attacks in system operation through the injection program \eqref{equ:attack_injection}.} The left figure shows that the $T$-horizon cumulative residual under attacks has small deviation from the nominal $T$-horizon cumulative residual, which means the attacks are hiding in the noise. However, the right figure shows that the critical measurement has obvious deviation from nominal critical measurement after attacks are injected, which means the generated attacks inject targeted biases in the system successfully.
+\begin{figure}[!h]
+    \centering
+    \includegraphics[scale=0.55]{new_sim_image/attack_effect.png}
+    \caption{\textcolor{blue}{Performance of generated attacks injected through $39\%$ measurements nodes of the water distribution system. (Left: $T$-horizon cumulative residual, Right: critical measurement at each time step.)}}
+    \label{fig:generator_test_example_1}
+\end{figure}
+
+ \textcolor{blue}{Next, the above automated attack generation scheme is trained to generate different types of attacks including different attack supports and different number of attacks. The generated attacks are then used to train the supervised learning-based attack detection and localization algorithm in next subsection.}
+
+\subsection{MLP training}
+To show one of the merits of the proposed automated attack generation scheme, two training datasets are prepared: one produced by random additive signals on measurements and the other augments the dataset with attack samples generated by the trained generator. Next, two MLP classifiers are trained on two datasets respectively. \textcolor{blue}{MLP1 and MLP2 are both four-layer fully-connected neural network with three "relu" hidden layers of $512, 1024, 512$ neurons respectively.  The output layer has $61$ neurons and uses "sigmoid" activation function. MLP1 is trained by the first random attack dataset, while MLP2 is trained the second training dataset containing automated generated attacks. The testing F1 score and precision of MLP1 are $85.1\%$ and $99.7\%$ respectively, while MLP2 achieves $88.7\%$ and $99.1\%$ respectively. The testing datasets used is $10\%$ of the corresponding datasets, so the testing datasets for MLP2 and MLP1 are different. Next, we compare the localization precision of the two MLPs on a same testing dataset which is an equal mixture of dataset 1 and dataset 2. As shown in Fig.~\ref{fig:MLP_compare}, MLP2 has successfully shifted the localization precision to the right, indicating a better performance overall. However, MLP1's performance is nearly uniform for different localization precision higher than $0.5$. This is because it is trained by random attack dataset. The mean precision of MLP1 is $74.37\%$, and the mean precision of MLP2 is $98.69\%$ on a testing set of successful \textcolor{blue}{FDIAs}.}   
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[scale=0.8]{new_sim_image/MLP_compare.png}
+    \caption{\textcolor{blue}{A sample-based comparison of the performance of two MLP classifiers on same testing set of successful FDIAs. (MLP1: trained only with random attack generation, MLP2: trained with random attack generation and the proposed automated attack generation, $50000$ test cases are used.)}}
+    \label{fig:MLP_compare}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[scale=0.4]{new_sim_image/post_pruning_observability.png}
+    \caption{\textcolor{blue}{A sample-based comparison of post-pruning observability for MLP1 and MLP2. ($50000$ test cases are used. The y axis for the top two subplots $Pr(k_j\geq k_0)$ is the sample estimate of the probability of at least $k_0$ measurements remaining after pruning. The black lines in the bottom subplots show the mean value of $k_j$ that is the number of measurements remaining after pruning, while the red and green dots are the minimum and maximum values of $k_j$'s respectively.}}
+    \label{fig:MLP_compare_k0}
+\end{figure}
+
+As shown in Fig.~\ref{fig:observability}, full observability can be guaranteed with certainty if \textcolor{blue}{$k_0\geq 42$} measurements remains after pruning. For this, we evaluate the sufficient condition in \eqref{equ:localization_performance_criterion} on MLP1 and MLP2. First, the two MLPs are run on $10000$ cases generated by the trained generative model. From the results, the confidence vectors of the MLPs are estimated by calculating the true rates at all $61$ measurement nodes; for node $i$, $\mathbf{p}_i=\frac{TP_i+TN_i}{P_i+N_i}$. 
+\iffalse
+The confidence vectors of MLP1 and MLP2 are
+$$\begin{aligned}
+   &\mathbf{p}(\text{MLP1}) = [0.7076, 0.7065, 0.6883, 0.6621, 0.6855, 0.6790,\\
+   &0.6721, 0.6807, 0.6623, 0.6791, 0.7535, 0.7610, 0.7519, 0.7334, \\
+   &0.7692, 0.8001, 0.7393, 0.7150, 0.7667, 0.7519, 0.7544, 0.7338, \\
+   & 0.7402, 0.7362, 0.7759, 0.7418, 0.7474, 0.7382, 0.7476, 0.7831, \\
+   &0.7446, 0.7645, 0.7742, 0.7378, 0.7938, 0.7652, 0.7635, 0.7771, \\
+   &0.7633, 0.7646],
+\end{aligned} 
+$$
+$$\begin{aligned} &\mathbf{p}(\text{MLP21}) = [0.9826, 0.9819, 0.9828, 0.9853, 0.9866, 0.9737,\\
+   &0.9804, 0.9858, 0.9748, 0.9749, 0.7692, 0.7685, 0.7764, 0.7855, \\
+   &0.7667, 0.7995, 0.7422, 0.7528, 0.7729, 0.7959, 0.7631, 0.7996, \\
+   & 0.7870, 0.7581, 0.7899, 0.7533, 0.7801, 0.8237, 0.7883, 0.8227, \\
+   &0.7664, 0.7772, 0.8087, 0.8039, 0.8226, 0.8470, 0.8157, 0.8443, \\
+   &0.8044, 0.8257].
+\end{aligned} $$
+\fi
+Next, a sample based experiment is performed. For each support size \textcolor{blue}{$|\hat{\mathcal{T}}_j^c| \in \left\{40,41,\hdots,61\right\}$}, we generated  $\min\left\{^{61}C_{|\hat{\mathcal{T}}_j^c|},50000\right\}$ unique supports $\hat{\mathcal{T}}^c$, and  evaluated the right hand side of \eqref{equ:localization_performance_criterion} for each unique support as follows: 
+$$k_j = -\ln\left(\sum_{i=0}^{|\hat{\mathcal{T}}_j^c|}e^{-i}\bar{\mathbf{r}}_i\right),$$
+where the Poisson-binomial probability density vector $\bar{\mathbf{r}}_i$ is calculated, using the confidence vectors of \textcolor{blue}{the corresponding MLP}, based on \eqref{equ:r_tau_hat_c}. For each \textcolor{blue}{$|\hat{\mathcal{T}}_j^c| \in \left\{40,41,\hdots,61\right\}$}, and each MLP, the sample probability of the event $k_j\ge k_0$ and the expected value of $k_j$ are shown in Fig.~\ref{fig:MLP_compare_k0}. The results show that  MLP2 has a bigger chance of preserving post-pruning observability. Indeed, according to the figure, post-pruning observability cannot be guaranteed when MLP1 is used. \textcolor{blue}{In addition, from the bottom plots in Fig.~\ref{fig:MLP_compare_k0}, it is seen that MLP2 reduces the uncertainty on the post-pruning observability compared to MLP1.} By considering the sample-based analysis in Fig.~\ref{fig:MLP_compare} and Fig.~\ref{fig:MLP_compare_k0} together, it is seen that MLP performs better \textcolor{blue}{when trained with data generated by} the proposed automated attack generation.
+
+\textcolor{blue}{Next, we present} a comparison of MLP1 and MLP2 in the resilient $\ell_2$ estimation scheme for the water distribution system to show their effects on the estimator's resiliency.
+
+\subsection{Resilient $\ell_2$ observer}
+Finally, the trained MLPs with pruning algorithm are used in a real-time simulation of the water distribution system. The resilient $\ell_2$ observer in \eqref{equ:resilient_L2} is included to perform the state estimation. The goal of this simulation is to estimate the probability of achieving resilient performance, using different attack detection strategies with the $\ell_2$ observer. \textcolor{blue}{A} Monte-Carlo experiment is carried out. The input of the experiment are generated attacks by the trained attack generator. The outputs are: (1) the \textbf{probability of sustaining normal operation} (pSNO) estimated as the ratio of the instances where the deviation of critical measurement from the nominal value is below a given threshold to the total number of instances, (2) the \textbf{probability of triggering an alarm} (pTA) estimated as the ratio of the instances where the deviation of detection residual from the nominal value is beyond a given threshold to the total number of instances. Clearly, bigger values of pSNO and pTA indicate better resiliency.
+
+The input attack dataset includes different number of attacks from \textcolor{blue}{$1$ to $30$}, and for each number of attacks, we generated $5$ datasets corresponding to different attack scenarios. The attack supports were generated randomly. Next, the system simulation process shown in Fig.~\ref{fig:resilient_L2_observer} was carried out with different attack detection strategies: MLP1, MLP1 with pruning, MLP2, and MLP2 with pruning. During the system simulation, the $T$-horizon cumulative detection residual $\mathbf{r}_{I}$ is calculated based on \eqref{equ:M1}, and the critical measurement $\mathbf{y}_{c_{i+1}}$ is also calculated based on \eqref{equ:M2}. Then the performance, in terms of deviation ratios of the residual $\Delta \mathbf{r}$ and the critical measurements $\Delta \mathbf{y}$ respectively, are evaluated using
+$$\begin{aligned}
+    \Delta \mathbf{r} &= \frac{\left|(\mathbf{r}_{I}-\mathbf{r}_d)-(\mathbf{r}^{\star}_{I} - \mathbf{r}_d)\right|}{\textsf{max}\left(\left|(\mathbf{r}_{I}-\mathbf{r}_d)-(\mathbf{r}^{\star}_{I} - \mathbf{r}_d)\right|\right)}, \\
+\Delta \mathbf{y} &= \frac{\left|(\mathbf{y}_{c_{i+1}}-\mathbf{y}_{c_d})-(\mathbf{y}^{\star}_{c_{i+1}}-\mathbf{y}_{c_d})\right|}{\textsf{max}\left(\left|(\mathbf{y}_{c_{i+1}}-\mathbf{y}_{c_d})-(\mathbf{y}^{\star}_{c_{i+1}}-\mathbf{y}_{c_d})\right|\right)},
+\end{aligned}
+$$
+where $\mathbf{r}_d$ is the residual vector in the corresponding attack-free and noise-free case, $\mathbf{y}_{c_d} = C_c \mathbf{x}_d$ is the desired critical measurement vector corresponding to the desired states $\mathbf{x}_d$. Consequently, pTA and pSNO are estimated as $\text{pTA} = \frac{1}{N}\left\|\Delta \mathbf{r} \ge \frac{\tau_1|\mathbf{y}_c^{\star}|}{\textsf{max}(|\mathbf{y}_c-\mathbf{y}_c^{\star}|)}\right\|_{\ell_0}$ and $\text{pSNO}=\frac{1}{N}\left\|\Delta \mathbf{y}\le \frac{\tau_2|\mathbf{r}^{\star}|}{\textsf{max}(|\mathbf{r}-\mathbf{r}^{\star}|)}\right\|_{\ell_0}$ respectively, where $N$ is the total number of time instances from the start of attack injection. The thresholds $\tau_1=1\%$ and $\tau_2 = 3\%$ are set based on the responses of the attack-free simulation. 
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[scale=0.5]{new_sim_image/resiliency_compare.png}
+    \caption{\textcolor{blue}{A comparison of the $\ell_2$ observer resiliency with different attack detection strategies, bigger values of pSNO and pTA indicate better resiliency. (The solid lines are mean values and the colored region indicates the spread of quantities}}
+    \label{fig:resiliency_compare}
+\end{figure}
+
+Fig.~\ref{fig:resiliency_compare} shows the result of the experiment and a comparison of pSNO and pTA for different detection strategies. It is seen that MLP2 has better resiliency than MLP1, even better than MLP1 with pruning. This demonstrates the significant improvement in resiliency by including the automated attack generator in the training of MLP. In addition, the mean of localization precision, calculated by \eqref{equ:PPV_def}, of four attack detection strategies are shown in Fig.~\ref{fig:precision}. As discussed in the last subsection, although the pruning algorithm still improve the localization precision of MLP2, the state estimation result is not improved as much due to the loss of observability. This indicates the MLP2 has already \textcolor{blue}{approached} the best balance between the localization precision and the observability requirement. However, it is noteworthy that MLP2 with pruning has tighter spread of pSNO and pTA values than MLP2. This indicates \textcolor{blue}{that the} pruning algorithm can reduce performance uncertainty.
+
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[scale=0.5]{new_sim_image/precision_vs_num_attack.png}
+    \caption{\textcolor{blue}{A comparison of the mean precision of different attack detection strategies in the system simulation versus different number of attacks}}
+    \label{fig:precision}
+\end{figure}
+
+\iffalse
+\begin{table}[]
+    \centering
+    \caption{Mean value of attack localization precision}
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+       $\#$(attacks) & MLP1 & MLP1+pruning & MLP2 & MLP2+pruning  \\
+        \hline 
+       2  &  0.9150 & 0.9696 & 0.9559 & 0.9993\\
+       3 & 0.8853 & 0.9427 & 0.9282 & 0.9790\\
+       4 & 0.8612 & 0.9182 & 0.8998 & 0.9536\\
+       5 & 0.8356 & 0.8925 & 0.8778 & 0.9381 \\
+       6 & 0.8148 & 0.8651 & 0.8645 & 0.9201 \\
+       7 & 0.7903 & 0.8414 & 0.8402 & 0.8878 \\
+       8 & 0.7672 & 0.8116 & 0.8234 & 0.8823 \\
+       9 & 0.7434 & 0.7905 & 0.7993 & 0.8677 \\
+       10 & 0.7150 & 0.7602 & 0.7719 & 0.8407 \\
+       11 & 0.6905 & 0.7377 & 0.7501 & 0.8296 \\
+       12 & 0.6651 & 0.7091 & 0.7174 & 0.7904 \\
+       13 & 0.6441 & 0.6851 & 0.7011 & 0.7689 \\
+       14 & 0.6167 & 0.6598 & 0.6705 & 0.7496 \\
+       15 & 0.5704 & 0.6349 & 0.6517 & 0.7388\\
+       16 & 0.5704 & 0.6106 & 0.6412 & 0.7223\\
+       17 & 0.5462 & 0.5833 & 0.6135 & 0.6955 \\
+       18 & 0.5251 & 0.5576 & 0.5983 & 0.6751 \\
+       19 & 0.5012 & 0.5305 & 0.5641 & 0.6265 \\
+       20 & 0.4725 & 05069 & 0.5296 & 0.6192\\
+       \hline
+    \end{tabular}
+    \label{tab:precision_table}
+\end{table}
+\fi
+
+
+Finally, \textcolor{blue}{a} time-domain simulation result is presented in Fig.~\ref{fig:time_domain_result}. \textcolor{blue}{The attacks, same as the ones in Fig~\ref{fig:generator_test_example_1}, are injected through the program \eqref{equ:attack_injection}}. Then four resilient estimation schemes are compared. It is seen that the schemes using MLP2 and MLP2 with pruning reduce the \textcolor{blue}{attack} effectiveness \textcolor{blue}{on} the critical measurements (smaller $\Delta \mathbf{y}$), and also reduce the \textcolor{blue}{attack stealthiness} (bigger $\Delta \mathbf{r}$). \textcolor{blue}{This means that, with MLP2 or MLP2 and pruning, it is easier to detect the attacks while, at the same time, their effects are reduced.}
+
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[scale=0.11]{new_sim_image/time-domain.png}
+    \caption{\textcolor{blue}{A time-domain simulation results of the resilient estimation with four different attack localization strategies when the same $39\%$ measurements are attacked as shown in Fig\ref{fig:generator_test_example_1}}}
+    \label{fig:time_domain_result}
+\end{figure}
