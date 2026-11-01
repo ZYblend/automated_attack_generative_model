@@ -2,7 +2,7 @@ In this section, the corresponding improvement of resiliency due to the automate
 
 \begin{figure}[!ht]
     \centering
-    \includegraphics[scale=0.37]{image/WDS.png}
+    \includegraphics[width=\columnwidth]{image/WDS.png}
     \caption{Block diagram depiction of a water distribution system under \textcolor{blue}{FDIAs} (black solid are water pipelines, blue dotted lines are wireless data transmission lines for sensors data and control commands, orange dotted lines are attack injection route)}
     \label{fig:water_distribution_sys}
 \end{figure}
@@ -50,7 +50,7 @@ A fixed time step of $T_s = 0.01s$ is used and the moving-window size is set as 
 where $\mathbf{e}^{-}$ is the attack history during the time window $I^{-} = [i-T+1, i-1]$. Fig.~\ref{fig:generator_test_example_1} shows the performance of the generated attacks in system operation through the injection program \eqref{equ:attack_injection}.} The left figure shows that the $T$-horizon cumulative residual under attacks has small deviation from the nominal $T$-horizon cumulative residual, which means the attacks are hiding in the noise. However, the right figure shows that the critical measurement has obvious deviation from nominal critical measurement after attacks are injected, which means the generated attacks inject targeted biases in the system successfully.
 \begin{figure}[!h]
     \centering
-    \includegraphics[scale=0.55]{new_sim_image/attack_effect.png}
+    \includegraphics[width=\columnwidth]{new_sim_image/attack_effect.png}
     \caption{\textcolor{blue}{Performance of generated attacks injected through $39\%$ measurements nodes of the water distribution system. (Left: $T$-horizon cumulative residual, Right: critical measurement at each time step.)}}
     \label{fig:generator_test_example_1}
 \end{figure}
