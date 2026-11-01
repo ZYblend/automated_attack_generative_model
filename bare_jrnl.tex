@@ -109,7 +109,7 @@
 % Linebreaks \\ can be used within to get better formatting as desired.
 % Do not put math or special symbols in the title.
 \title{
-Algorithm Design for Resilient Cyber-Physical Systems using an Automated Attack Generative Model
+Physics-Guided Attack Generation for Resilient Cyber-Physical State Estimation
 }
 %
 %
@@ -123,7 +123,7 @@ Algorithm Design for Resilient Cyber-Physical Systems using an Automated Attack 
 %
 
 \author{Yu Zheng, ~\IEEEmembership{Student Member,~IEEE,}
-, Ali Sayghe, ~\IEEEmembership{Student Member,~IEEE,} 
+Ali Sayghe, ~\IEEEmembership{Student Member,~IEEE,}
 and Olugbenga Moses Anubi, ~\IEEEmembership{Senior Member,~IEEE,}
 % <-this % stops a space
 \thanks{$^{1}$The authors are with Department of Electrical and Computer Engineering, FAMU-FSU College of Engineering, Center for Advanced Power Systems, Florida State University, Tallahassee, FL 32310
@@ -155,8 +155,8 @@ and Olugbenga Moses Anubi, ~\IEEEmembership{Senior Member,~IEEE,}
 
 
 % The paper headers
-\markboth{Journal of \LaTeX\ Class Files,~Vol.~14, No.~8, August~2015}%
-{Shell \MakeLowercase{\textit{et al.}}: Bare Demo of IEEEtran.cls for IEEE Journals}
+\markboth{Submitted for Review}%
+{Zheng \MakeLowercase{\textit{et al.}}: Physics-Guided Attack Generation for Resilient State Estimation}
 % The only time the second header will appear is for the odd numbered pages
 % after the title page when using the twoside option.
 % 
@@ -183,7 +183,7 @@ and Olugbenga Moses Anubi, ~\IEEEmembership{Senior Member,~IEEE,}
 % As a general rule, do not put math, special symbols or citations
 % in the abstract or keywords.
 \begin{abstract}
-This paper presents a suite of algorithms for detecting and localizing attacks in cyber-physical systems, and for performing resilient state estimation with a Kalman filter monitored by a chi-square detector. High performance of the underlying detection and localization algorithms is achieved by generating training data that cover a large region of the attack space. An unsupervised generative model trained by physics-based discriminators---constructed from the Kalman-filter innovation and closed-loop critical-output maps---is designed to generate successful false data injection attacks. The generated adversarial examples train a multi-class deep network that detects and localizes compromised measurements. A pruning algorithm then improves localization precision and provides probabilistic guarantees linking attack sparsity, post-pruning observability, Kalman-filter estimation error, and detection precision. The framework is validated on a water distribution cyber-physical system.
+This paper develops a resilient state-estimation framework for linear cyber-physical systems subject to sparse false-data injection attacks. A steady-state Kalman filter and a chi-square innovation detector are incorporated into a physics-guided attack generator. The generator uses the closed-loop attack-to-output map to quantify attack effectiveness and the attack-to-innovation map to quantify detection probability. Generated attacks are subsequently used to train a channel-wise localization network. Under explicit conditional-calibration and independence assumptions, calibrated safety probabilities are employed to select a measurement subset with a prescribed probability of being attack-free. The resulting analysis relates four quantities that are commonly treated separately: attack sparsity, sensor-set observability, localization reliability, and conditional Kalman-filter error covariance. A water-distribution case study reports the empirical observability profile and illustrates the localization improvement obtained from an earlier physics-guided training set; numerical validation of the revised KF/chi-square generator is left for future work.
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
@@ -194,26 +194,26 @@ Resilient estimation, Kalman filter, chi-square detector, false data injection a
 
 
 \section{Introduction}\label{sec:Introduction}
-\input{1-Introduction}
+\input{1-Introduction_revised}
 
 \section{Notation and Preliminary}\label{sec:notation}
-\input{0-notation_and_prelim}
+\input{0-notation_and_prelim_revised}
 
 
-\section{Model Development}\label{sec:system_model}
+\section{System and Threat Model}\label{sec:system_model}
 \input{2-System_model}
 
 \section{Automated Attack Generation}\label{sec:attack_generation}
-\input{3-attack_generation}
+\input{3-attack_generation_revised}
 
 \section{Detection and Localization}\label{sec:detection_localization}
-\input{4-detection_localization}
+\input{4-detection_localization_revised}
 
 \section{Resilient Estimator}\label{sec:resilient_estimator}
-\input{5-resilient_estimation}
+\input{5-resilient_estimation_revised}
 
 \section{Simulation}\label{sec:simulation}
-\input{6-simulation}
+\input{6-simulation_revised}
 
 \section{Conclusion} \label{sec:conclusion}
 \input{7-conclusion}

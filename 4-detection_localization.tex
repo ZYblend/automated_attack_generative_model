@@ -234,7 +234,9 @@ From \eqref{equ:eta_upper_bound}, it is clear that, necessarily, the upper bound
 \begin{align}\label{equ:localization_performance_criterion}
 \sum\limits_{i=0}^{|\hat{\mathcal{T}}^c|}e^{-i}\bar{\mathbf{r}}_i < e^{-k_0}.
 \end{align}
-If this holds, according to assumption~A2, with at least $k_0$ safe nodes remaining in the pruned support prior $\hat{\mathcal{T}}^c_{\eta}$, $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ is observable. Consequently, a Kalman filter designed on that subset is well-posed, and the mean-square estimation error remains bounded as formalized in Section~\ref{sec:resilient_estimator}.
+If this holds, according to the assumption $A2$, with at least $k_0$ safe nodes remaining in the pruned support prior $\hat{\mathcal{T}}^c_{\eta}$, $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ will be observable. Thus the asymptotic convergence of the estimation error is guaranteed. 
+% Thus, the resilient $\ell_2$ observer designed on $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ can estimate the state variables correctly.
+%{\color{red}We may need to check this property in the simulation section for the localization algorithm }{\color{blue}we would give theorem for the estimation error bound of resilient L2 for this concern. }{\color{red} A theorem is good. But we still need to check with the simulation. For example: What is $k_0$ for MLP1? }
 \end{remark}
 
 \iffalse
@@ -255,46 +257,13 @@ For pragmatic reasons, it is important to ensure that $l_{\eta} >0$ in \eqref{eq
 \begin{equation}\label{equ:precision_after_pruning}
     \textsf{Pr}\left\{\textsf{PPV}_{\eta} =1 \right\} \geq \eta.
 \end{equation} 
-This indicates that, with probability at least $\eta$, every sensor in $\hat{\mathcal{T}}^c_{\eta}$ is safe. Combined with Remark~\ref{rmk:performance_require}, $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ is then observable, which is the sensing condition required by the resilient Kalman filter in Section~\ref{sec:resilient_estimator}.
-
-\subsection{Quantitative bridge: sparsity, observability, and precision}
-We now make explicit the chain connecting attack sparsity, post-pruning observability, localization precision, and---in the next section---KF estimation error. Let $k=|\mathcal{T}|$ be the number of compromised sensors at a time index, and write $m_s=|\hat{\mathcal{T}}^c|$ for the number of sensors declared safe by the localization stage before pruning.
-
-\begin{proposition}[Sparsity--observability budget]\label{Prop:sparsity_observability}
-Suppose at most $k$ sensors are attacked and the localization stage returns a safe-set estimate of size $m_s$. If the pruning length satisfies $l_{\eta}\ge k_0$, then a necessary sensing budget is
-\begin{equation}\label{equ:sparsity_budget}
-m_s\ge l_{\eta}\ge k_0
-\quad\Rightarrow\quad
-k\le m-k_0+\big(m_s-(m-k)\big)^{+},
-\end{equation}
-where $(\cdot)^{+}=\max\{\cdot,0\}$ accounts for false-safe declarations. In particular, when localization makes no false-safe error on attacked channels, observability after pruning requires $k\le m-k_0$.
-\end{proposition}
-\begin{proof}
-At most $m-k$ sensors are truly safe. The pruned set has size $l_{\eta}$ and is contained in the declared safe set of size $m_s$. Enforcing $l_{\eta}\ge k_0$ for A2 yields $m_s\ge k_0$. If every attacked sensor is correctly excluded, then $m_s\le m-k$, hence $k\le m-k_0$. False-safe inclusions relax this bound by the displayed surplus term.
-\end{proof}
-
-\begin{proposition}[Precision--observability trade-off]\label{Prop:precision_observability}
-Fix localization confidences $\{\mathbf{p}_i\}$ and $k_0$. Let $\eta^{\star}$ be the right-hand side of \eqref{equ:eta_upper_bound}. Then every reliability level $\eta\in(0,\eta^{\star}]$ simultaneously guarantees
-\begin{enumerate}
-\item[(i)] $l_{\eta}\ge k_0$ (post-pruning observability), and
-\item[(ii)] $\textsf{Pr}\{\textsf{PPV}_{\eta}=1\}\ge\eta$ (clean pruned sensors).
-\end{enumerate}
-Increasing $\eta$ toward $\eta^{\star}$ raises the guaranteed precision but shortens $l_{\eta}$; decreasing $\eta$ lengthens the pruned set (and typically reduces the KF error covariance derived in Section~\ref{sec:resilient_estimator}) at the expense of a weaker precision certificate.
-\end{proposition}
-\begin{proof}
-Claim~(i) is Theorem~\ref{Thm:eta_upper_bound}; claim~(ii) is \eqref{equ:precision_after_pruning}. The monotonicity of $l_{\eta}$ in $\eta$ follows from \eqref{equ:trust_number} because the admissible $k$ in the $\max$ decreases as $\eta$ increases.
-\end{proof}
-
-\begin{remark}[Chi-square detection vs.\ localization precision]
-The chi-square test \eqref{equ:chisq_detector} provides a \emph{global} detection decision with false-alarm rate $\beta$, whereas $\textsf{PPV}_{\eta}$ quantifies \emph{channel-wise} localization precision after pruning. Stealthy $(\alpha,\epsilon)$-FDIAs are generated to keep the attack contribution to $g_i$ below $\epsilon$; the MLP+pruning pipeline then recovers a high-precision safe set on which the KF operates. The two notions of ``detection precision'' are therefore complementary: $\chi^2$ bounds miss/false-alarm at the innovation level, while $\textsf{PPV}_{\eta}$ bounds contamination of the estimator's sensor subset.
-\end{remark}
-
-Finally, Algorithm~\ref{Alg:ADL_AAG_P} summarizes the attack detection and localization pipeline with automated attack generation and pruning.
+This indicates that, with the probability of at least $\eta$, the measurement nodes contained in $\hat{\mathcal{T}}^c_{\eta}$ are all safe, and $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$ is observable according to Remark~\ref{rmk:performance_require}. Thus, with the probability of at least $\eta$, \textcolor{blue}{exact state} estimation can be achieved by using $\ell_2$ observer designed based on $(A,C_{\hat{\mathcal{T}}^c_{\eta}})$.
+Finally, \textcolor{blue}{Algorithm~\ref{Alg:ADL_AAG_P}} summarizes the attack detection and localization using automated attack generation and pruning operation.
 \begin{algorithm}[h!]\label{Alg:ADL_AAG_P}
 \SetAlgoLined
 \uppercase\expandafter{\romannumeral1}.\hspace{2mm}\textbf{Offline: Dataset generation and training.}\\
 \begin{enumerate}
-    \item Given time horizon $T$, prepare physics-based discriminator maps $M_1$ (KF--controller effectiveness) and $M_2$ (chi-square stealthiness) $\leftarrow$ \eqref{equ:M1}, \eqref{equ:M2}.
+    \item Given time horizon $T$, prepare $M_1, M_2$ matrices for physics-based \textcolor{blue}{discriminators} $\leftarrow$ \eqref{equ:M1}, \eqref{equ:M2}.
     \item Given the number of attacks $|\mathcal{T}|$, randomize attack support $\mathcal{T}$, and obtain its indicator $\mathbf{q}$ $\leftarrow$ \eqref{equ:support}.
     \item Given attack indexes $\alpha, \epsilon$, train the generative model (GM) by solving the optimization problem in \eqref{equ:training_GM}.
     \item Generate attack dataset $\{Y\}$ using the trained GM. Evaluate generated attack dataset via simulation.

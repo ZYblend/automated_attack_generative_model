@@ -1,21 +1,21 @@
 %%%%%%%%%%%%%%%%%% System model: stochastic CPS + Kalman filter + chi-square detector %%%%%%%%
-The following stochastic linear model is used to describe the physical process of a CPS:
+Consider the discrete-time stochastic linear system
 \begin{equation}\label{equ:physical_model}
 \begin{aligned}
     \mathbf{x}_{i+1} &= A\mathbf{x}_i+B\mathbf{u}_i+\mathbf{w}_i,\\
     \mathbf{y}_i &= C\mathbf{x}_i+\mathbf{v}_i,
  \end{aligned}
 \end{equation}
-where $\mathbf{x}_i \in \mathbb{R}^n$ is the state vector, $\mathbf{u}_i \in \mathbb{R}^{p}$ the control input, and $\mathbf{y}_i \in \mathbb{R}^{m}$ the sensor measurement. The process noise $\mathbf{w}_i\sim\mathcal{N}(\mathbf{0},Q)$ and measurement noise $\mathbf{v}_i\sim\mathcal{N}(\mathbf{0},R)$ are mutually independent white sequences with $Q\succeq 0$ and $R\succ 0$. The appropriately dimensioned system matrices $A,B$ and $C$ are assumed to satisfy the following:
+where $\mathbf{x}_i\in\mathbb{R}^n$, $\mathbf{u}_i\in\mathbb{R}^{p}$, and $\mathbf{y}_i\in\mathbb{R}^{m}$ denote the state, control input, and measurement, respectively. The process noise $\mathbf{w}_i\sim\mathcal{N}(\mathbf{0},Q)$ and measurement noise $\mathbf{v}_i\sim\mathcal{N}(\mathbf{0},R)$ are mutually independent white sequences, with $Q\succeq0$ and $R\succ0$. The initial state is Gaussian and independent of both noise sequences. The following assumptions are imposed:
 \begin{enumerate}
-    \item [A1.]{The pair $(A,B)$ is controllable.}
+    \item [A1.]{The pair $(A,B)$ is stabilizable.}
     \item [A2.]{There exists a positive integer $k_0 \leq m$ such that the pair $(A,C_{\mathcal{S}})$ is observable for all $\mathcal{S} \subset \left\{1,2,\cdots,m\right\}$ with $|\mathcal{S}|\geq k_0$.}
     \item [A3.]{The pair $(A,Q^{1/2})$ is stabilizable.}
 \end{enumerate}
-Assumption~A2 encodes a quantitative redundancy level of the sensing network: any subset of at least $k_0$ sensors preserves observability. This sparsity--observability threshold will be linked to estimation error and detection precision in Sections~\ref{sec:detection_localization} and~\ref{sec:resilient_estimator}.
+Assumption~A2 quantifies the redundancy of the sensing architecture. Specifically, loss of as many as $m-k_0$ sensors does not destroy observability, provided that the remaining measurements are attack-free.
 
 \subsection{Kalman filter}
-Under A2--A3, the minimum-variance linear estimator of \eqref{equ:physical_model} is the Kalman filter (KF). Let $\hat{\mathbf{x}}_{i|i-1}$ and $P_{i|i-1}$ denote the predicted state and covariance. The prediction and update steps are
+Let $\hat{\mathbf{x}}_{i|i-1}$ and $P_{i|i-1}$ denote the one-step state prediction and its error covariance. With a correctly initialized covariance, the Kalman filter recursion is
 \begin{align}
 \hat{\mathbf{x}}_{i|i-1} &= A\hat{\mathbf{x}}_{i-1|i-1}+B\mathbf{u}_{i-1}, \label{equ:kf_predict}\\
 P_{i|i-1} &= AP_{i-1|i-1}A^{\top}+Q, \label{equ:kf_Ppred}\\
@@ -25,30 +25,34 @@ K_i &= P_{i|i-1}C^{\top}S_i^{-1}, \label{equ:kf_gain}\\
 \hat{\mathbf{x}}_{i|i} &= \hat{\mathbf{x}}_{i|i-1}+K_i\mathbf{r}_i, \label{equ:kf_update}\\
 P_{i|i} &= \left(I-K_iC\right)P_{i|i-1}. \label{equ:kf_Pupdate}
 \end{align}
-The innovation $\mathbf{r}_i$ in \eqref{equ:innovation} is zero-mean Gaussian with covariance $S_i$ in the attack-free case. When the filter operates in steady state, $P_{i|i-1}\to P^-$, $K_i\to K$, and $S_i\to S=CP^-C^{\top}+R$, where $P^-$ solves the discrete algebraic Riccati equation associated with $(A,C,Q,R)$. For notational convenience we write $\hat{\mathbf{x}}_i\triangleq\hat{\mathbf{x}}_{i|i}$ for the filtered estimate used by the controller.
+Under the nominal hypothesis, the innovation sequence is independent and satisfies $\mathbf{r}_i\sim\mathcal{N}(\mathbf{0},S_i)$. Under A2--A3, the covariance recursion converges for every measurement subset covered by A2. In the full-sensor case, denote the limiting predicted covariance, gain, and innovation covariance by $P^-$, $K$, and $S=CP^-C^\top+R$, respectively. Hereafter, $\hat{\mathbf{x}}_i\triangleq\hat{\mathbf{x}}_{i|i}$.
 
 \subsection{Chi-square bad-data detector}
-Because $\mathbf{r}_i\sim\mathcal{N}(\mathbf{0},S_i)$ under the nominal hypothesis $\mathcal{H}_0$ (no attack), the normalized innovation squared
+The normalized innovation squared is
 \begin{equation}\label{equ:chisq_stat}
 g_i \triangleq \mathbf{r}_i^{\top}S_i^{-1}\mathbf{r}_i
 \end{equation}
-follows a chi-square distribution with $m$ degrees of freedom. A chi-square detector with false-alarm rate $\beta$ is
+Under the nominal hypothesis $\mathcal{H}_0$, $g_i\sim\chi_m^2$. For a prescribed nominal false-alarm probability $\beta\in(0,1)$, define
 \begin{equation}\label{equ:chisq_detector}
 \textsf{BDD}(\mathbf{y}_i)=\begin{cases}
 0,&\text{if } g_i\le\tau_{\chi^2}(\beta),\\
 1,&\text{otherwise,}
 \end{cases}
 \end{equation}
-where the threshold $\tau_{\chi^2}(\beta)$ is the $(1-\beta)$-quantile of $\chi^2_m$. Equivalently, over a moving window $I=[i-T+1,i]$ one may use the cumulative statistic $g_I=\sum_{j\in I}g_j\sim\chi^2_{Tm}$ under $\mathcal{H}_0$. Unlike a purely residual-norm test, \eqref{equ:chisq_detector} accounts for the innovation covariance and admits an explicit probabilistic false-alarm specification.
+where $\tau_{\chi^2}(\beta)=F^{-1}_{\chi_m^2}(1-\beta)$. For a window $I=[i-T+1,i]$, independence of the nominal innovations gives
+\begin{equation}\label{equ:window_chisq}
+g_I\triangleq\sum_{j\in I}g_j\sim\chi^2_{Tm}.
+\end{equation}
+Thus the detector threshold has a direct nominal false-alarm interpretation. Its probability of detection under attack depends on the attack-induced noncentrality parameter developed in Section~\ref{sec:attack_generation}.
 
 \subsection{Closed-loop control}
-The following certainty-equivalence control law is considered:
+The state estimate is supplied to the certainty-equivalence control law
 \begin{equation}\label{equ:controller}
 \mathbf{u}_i = K_p\hat{\mathbf{x}}_i,
 \end{equation}
-where the gain $K_p$ is designed so that $\rho(A+BK_p)\in(0,1)$. Substituting \eqref{equ:controller} into \eqref{equ:physical_model} yields
+where $K_p$ is selected such that $\rho(A+BK_p)<1$. Substitution into \eqref{equ:physical_model} gives
 \begin{align*}
 \mathbf{x}_{i+1}
 &=\left(A+BK_p\right)\mathbf{x}_i+BK_p\left(\hat{\mathbf{x}}_i-\mathbf{x}_i\right)+\mathbf{w}_i.
 \end{align*}
-Hence, when the KF estimation error remains mean-square bounded, the closed-loop state is mean-square bounded as well. In particular, under A1--A3 and attack-free measurements, $\mathbb{E}\|\hat{\mathbf{x}}_i-\mathbf{x}_i\|_2^2=\mathrm{tr}(P_{i|i})$ converges to the steady-state filtered covariance, and the origin of the mean closed-loop dynamics is asymptotically stable \cite{anderson2012optimal,rawlings2017model}.
+Consequently, bounded second moments of the estimation error imply bounded second moments of the closed-loop state. In the attack-free case, $\mathbb{E}\|\hat{\mathbf{x}}_i-\mathbf{x}_i\|_2^2=\operatorname{tr}(P_{i|i})$, and the mean closed-loop dynamics are asymptotically stable \cite{anderson2012optimal,rawlings2017model}.
