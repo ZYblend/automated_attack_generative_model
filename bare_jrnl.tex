@@ -183,12 +183,12 @@ and Olugbenga Moses Anubi, ~\IEEEmembership{Senior Member,~IEEE,}
 % As a general rule, do not put math, special symbols or citations
 % in the abstract or keywords.
 \begin{abstract}
-This paper presents a suite of algorithms for detecting and localizing attacks in cyber-physical systems, and performing improved resilient state estimation through a pruning algorithm. High performance rates for the underlying detection and localization algorithms are achieved by generating training data that cover large region of the attack space.  An unsupervised generative model trained by physics-based discriminators is designed to generate successful false data injection attacks. Then the generated adversarial examples are used to train a multi-class deep neural network which detects and localizes the attacks on measurements. Next, a pruning algorithm is included to improve the precision of localization result and provide performance guarantees for the resulting resilient observer. The performance of the proposed method is validated using \textcolor{blue}{numerical simulations of} a water distribution cyber-physical system.
+This paper presents a suite of algorithms for detecting and localizing attacks in cyber-physical systems, and for performing resilient state estimation with a Kalman filter monitored by a chi-square detector. High performance of the underlying detection and localization algorithms is achieved by generating training data that cover a large region of the attack space. An unsupervised generative model trained by physics-based discriminators---constructed from the Kalman-filter innovation and closed-loop critical-output maps---is designed to generate successful false data injection attacks. The generated adversarial examples train a multi-class deep network that detects and localizes compromised measurements. A pruning algorithm then improves localization precision and provides probabilistic guarantees linking attack sparsity, post-pruning observability, Kalman-filter estimation error, and detection precision. The framework is validated on a water distribution cyber-physical system.
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{IEEEkeywords}
-Resilient Control and Estimation, False Data Injection Attack, Generative Model, Multilayer Perceptron, Pruning algorithm
+Resilient estimation, Kalman filter, chi-square detector, false data injection attack, generative model, multilayer perceptron, pruning, observability
 \end{IEEEkeywords}
 
 

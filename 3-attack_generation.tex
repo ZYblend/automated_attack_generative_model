@@ -1,93 +1,73 @@
-%%%%%%%%%%%%%%%%%% Automated attack generation %%%%%%%%%%%%%%%%%%%%%%%%%%% (Yu)
-
-%%%%%%%%% Definition of FDIA and cite papers for relevant results
-In this section, a generative model is developed for generating successful \textcolor{blue}{FDIAs} targeting the model in (\ref{equ:physical_model}). Including attack signals in the CPS model in \eqref{equ:physical_model} yields the adversarial measurement model
+%%%%%%%%%%%%%%%%%% Automated attack generation against KF + chi-square %%%%%%%%%%%%%%%%%%%%%%%%%%%
+In this section, a generative model is developed for producing successful FDIAs against the KF and chi-square detector of Section~\ref{sec:system_model}. Including an additive attack $\mathbf{e}_i\in\mathbb{R}^m$ in the measurement equation yields the adversarial model
 \begin{align}\label{equ:adversarial_measurement_model}
-    \mathbf{y}_{I} = H_0\mathbf{x}_{i-T} + H_1\mathbf{u}_{I-1} + \mathbf{e}_{I},
+    \mathbf{y}_i = C\mathbf{x}_i+\mathbf{v}_i+\mathbf{e}_i.
 \end{align}
-where $\mathbf{e}_{I} = \left[\begin{array}{cccc}\mathbf{e}_{i-T+1}^\top&\mathbf{e}_{i-T+2}^\top&\hdots&\mathbf{e}_i^\top\end{array}\right]^\top$ contains the attack vectors within the moving window $[i-T+1,\hspace{2mm} i]$. Consequently, substituting \eqref{equ:adversarial_measurement_model} into \eqref{equ:state_estimate} yields
-\begin{align}\nonumber
-    \hat{\mathbf{x}}_i &= A^T\mathbf{x}_{i-T} + F\mathbf{u}_{I-1} + A^T H_0^\dagger\mathbf{e}_{I}\\
-    &= \mathbf{x}_i + A^TH_0^\dagger\mathbf{e}_{I}.
-\end{align}
-Thus, the instantaneous estimation error is given by
-\begin{align}\nonumber
-    \tilde{\mathbf{x}}_i &= \hat{\mathbf{x}}_i - \mathbf{x}_i\\
-    &=A^TH_0^\dagger\mathbf{e}_{I}.
-\end{align}
-In general, attackers aim to achieve maximum perturbation of certain critical system output without triggering an alarm from the bad data detection mechanism. For this paper, a residual-based bad data detection scheme is used. Let
-\begin{align}\label{equ:residual}
-    \mathbf{r}_{I} \triangleq \mathbf{y}_{I}-H_1\mathbf{u}_{I-1} - H_0\mathbf{z},
-\end{align}
-where $\mathbf{z}$ is given in \eqref{equ:RHE}, be the residual vector associated with the receding horizon estimator in \eqref{equ:state_estimate}. Given a threshold value $\tau\in\mathbb{R}$, the bad data indicator for the windowed measurement history is given by
-\begin{align}
-    \textsf{BDD}(\mathbf{y}_{I}) = \left\{\begin{array}{cl}0&\text{ if }\left\|\mathbf{r}_i\right\|\le\tau\\1&\text{ otherwise.}\end{array}\right.
-\end{align}
-Substituting \eqref{equ:RHE} and \eqref{equ:adversarial_measurement_model} into \eqref{equ:residual} yields
-\begin{align}\nonumber \label{equ:M1}
-    \mathbf{r}_{I} &= \left(I-H_0H_0^\dagger\right)\left(\mathbf{y}_{I}-H_1\mathbf{u}_{I-1}\right)\\
-    &=\left(I-H_0H_0^\dagger\right)\left(H_0\mathbf{x}_{i-T}+\mathbf{e}_{I}\right).
-\end{align}
-Thus, from the attacker's perspective, it is desirable to keep the quantity $\left\|\left(I-H_0H_0^\dagger\right)\mathbf{e}_{I}\right\|_2$ as small as possible. 
-
-Next, let $\mathbf{y}_c = C_c\mathbf{x}$ be a vector of critical  output targeted by the attacker. We remark that this is not an attempt to identify a priori the particular outputs targeted by an attacker. Rather, we postulate that there are critical functional outputs which the resilient system designer desires to protect against adversarial targeting. Thus, we define \textcolor{blue}{FDIAs} which target those \textcolor{blue}{outputs} specifically so that the resulting resilient observer can offer the desired protection. \textcolor{blue}{In addition, since most of existing attack generation approaches \cite{zheng2021Resilient, liu2011false} consider the deviation on state estimates as the attack effectiveness, the associated control law is often omitted in the attack generation problem. However, from the development above, it is necessary to consider the controller since the trajectory of the critical output vector $\mathbf{y}_c$ is also affected by the control law which is also affected by the compromised measurements.} Substituting the control law in \eqref{equ:controller} into the linear model in \eqref{equ:physical_model} yields the closed loop system
-\begin{align}\nonumber
-    \mathbf{x}_{i+1} &= \Bar{A}\mathbf{x}_i + \Bar{B}\tilde{\mathbf{x}}_i,\\
-    &=\Bar{A}\mathbf{x}_i + \Bar{B}A^TH_0^\dagger\mathbf{e}_{I}.
-\end{align}
-where $\Bar{A} = A+BK_p$ and $\Bar{B} = BK_p$. Therefore,
-\begin{align}\label{equ:M2}
-    \mathbf{y}_{c_{i+1}} = C_c\Bar{A}\mathbf{x}_i + C_c\Bar{B}A^TH_0^\dagger\mathbf{e}_{I}.
-\end{align}
-Thus, from the attacker perspective, it is desirable to keep the quantity $\left\|C_c\Bar{B}A^TH_0^\dagger\mathbf{e}_{I}\right\|_2$ as big as possible.
-
-We now have all the ingredients to formally define and synthesize the generative model for successful \textcolor{blue}{FDIAs} in CPSs.
-
-\begin{definition}[\textcolor{blue}{($\alpha,\epsilon$)-}Successful \textcolor{blue}{FDIA}]\label{Def:Successful_FDIA}
-Consider the CPS in \eqref{equ:physical_model}. Given a positive integer $k<m$, the attack sequence $\mathbf{e}_I \in \Sigma_k \subset \mathbb{R}^{(T+1)m}$, is said to be $(\epsilon, \alpha)$-successful if
-\begin{equation}\label{equ:def_success_FDIA}
-     \left\|C_c\Bar{B}A^TH_0^\dagger\mathbf{e}_I\right\|_2 \geq \alpha \text{ and }  \left\|\left(I-H_0H_0^\dagger\right)\mathbf{e}_I\right\|_2 \leq \epsilon.
+Under attack, the innovation becomes
+\begin{equation}\label{equ:innovation_attack}
+\mathbf{r}_i = C\tilde{\mathbf{x}}_{i|i-1}+\mathbf{v}_i+\mathbf{e}_i,
 \end{equation}
-\textcolor{blue}{for some $\alpha, \epsilon \in \mathbb{R}_{+}$.}
+where $\tilde{\mathbf{x}}_{i|i-1}=\mathbf{x}_i-\hat{\mathbf{x}}_{i|i-1}$ is the prediction error. Consequently, the filtered estimation error is driven by
+\begin{equation}\label{equ:kf_error_attack}
+\tilde{\mathbf{x}}_{i|i}
+=(I-K_iC)\tilde{\mathbf{x}}_{i|i-1}-K_i\mathbf{v}_i-K_i\mathbf{e}_i.
+\end{equation}
+Over a moving window $I=[i-T+1,i]$, stack the attacks as $\mathbf{e}_I=\begin{bmatrix}\mathbf{e}_{i-T+1}^{\top}&\cdots&\mathbf{e}_i^{\top}\end{bmatrix}^{\top}$. Linearizing about the steady-state KF $(K,S)$ and collecting the affine maps from $\mathbf{e}_I$ to the windowed normalized innovation and to the induced critical-output bias defines the physics-based discriminators used below.
+
+\subsection{Chi-square stealthiness and critical-output effectiveness}
+Attackers aim to disturb a critical functional output $\mathbf{y}_c=C_c\mathbf{x}$ without triggering the chi-square detector \eqref{equ:chisq_detector}. The windowed chi-square statistic induced by $\mathbf{e}_I$ (neglecting the zero-mean noise contribution in the discriminator design) is characterized by the quadratic form
+\begin{equation}\label{equ:M2}
+\|M_2\mathbf{e}_I\|_2^2
+\triangleq
+\sum_{j\in I}\mathbf{e}_j^{\top}S^{-1}\mathbf{e}_j
+=\mathbf{e}_I^{\top}\big(\mathrm{blkdiag}(S^{-1},\ldots,S^{-1})\big)\mathbf{e}_I,
+\end{equation}
+so that stealthiness requires $\|M_2\mathbf{e}_I\|_2$ to remain below a design threshold tied to $\tau_{\chi^2}$. (When a cumulative detector $g_I$ is used, the same map applies with the corresponding block-diagonal weighting.)
+
+For effectiveness, substitute the control law \eqref{equ:controller} and the attack-driven KF error \eqref{equ:kf_error_attack} into the closed-loop dynamics. With $\Bar{A}=A+BK_p$ and $\Bar{B}=BK_p$, the critical output satisfies, to first order in the attack,
+\begin{equation}\label{equ:M1}
+\mathbf{y}_{c,{i+1}}
+=C_c\Bar{A}\mathbf{x}_i+C_c\Bar{B}\,M_K\mathbf{e}_I+\text{noise terms},
+\end{equation}
+where $M_K$ is the linear map from the windowed attack to the filtered estimation error induced by the steady-state KF gain (explicitly, $M_K$ is built by unrolling \eqref{equ:kf_error_attack} over $I$). Thus the attack effectiveness is measured by $\|M_1\mathbf{e}_I\|_2$ with $M_1=C_c\Bar{B}M_K$. From the attacker's perspective, $\|M_1\mathbf{e}_I\|_2$ should be large while $\|M_2\mathbf{e}_I\|_2$ stays small.
+
+\begin{definition}[$(\alpha,\epsilon)$-Successful FDIA]\label{Def:Successful_FDIA}
+Consider the CPS in \eqref{equ:physical_model} with the KF \eqref{equ:kf_predict}--\eqref{equ:kf_Pupdate} and chi-square detector \eqref{equ:chisq_detector}. Given a positive integer $k<m$, the attack sequence $\mathbf{e}_I\in\Sigma_k\subset\mathbb{R}^{Tm}$ is said to be $(\alpha,\epsilon)$-successful if
+\begin{equation}\label{equ:def_success_FDIA}
+\|M_1\mathbf{e}_I\|_2\geq\alpha
+\quad\text{and}\quad
+\|M_2\mathbf{e}_I\|_2\leq\epsilon
+\end{equation}
+for some $\alpha,\epsilon\in\mathbb{R}_{+}$.
 \end{definition}
 \begin{remark}
-\textcolor{blue}{The first criterion above requires the effectiveness to be at least $\alpha$, while the second criterion guarantees the stealthiness of the attack. Earlier researches formulated the attack generation problem as an effectiveness maximization problem with the stealthiness constraint \cite{liu2011false,mo2010false}. However, this limits the development of attack generators and its application range. Thus, feasibility-based definitions, as above, are currently favored by researchers \cite{sui2020vulnerability}. }
+The first criterion requires a minimum disruption of the critical output through the KF--controller loop. The second requires the attack-induced contribution to the (windowed) chi-square statistic to remain below $\epsilon$, thereby encoding stealthiness against \eqref{equ:chisq_detector}. Feasibility-based definitions of this type are preferred over pure maximizations of effectiveness under a hard stealth constraint \cite{sui2020vulnerability,mo2010false}.
 \end{remark}
-\noindent In the above definition, $k$ quantifies the attack sparsity level per time. Specifically, it is the maximum number of attacks allowed at each time index. Examples of such successful \textcolor{blue}{FDIAs} can be found in literature; a physics-based \textcolor{blue}{FDIA} generator capable of fooling $\ell_2$ observer, such as Kalman filer, can be found in \cite{mo2010false} and an optimization-based \textcolor{blue}{FDIA} generator capable of fooling stronger $\ell_1$ observer was proposed in \cite{zheng2021Resilient}. However, these \textcolor{blue}{FDIA}s are either computationally too expensive or too conservative to implement on fast real-time systems. In order to circumvent these limitations, we drew inspiration from the \textcolor{blue}{well-known} generative adversarial networks (GAN) \cite{goodfellow2014generative} to build \textcolor{blue}{generative} models for the elements of the set specified by inequalities in \eqref{equ:def_success_FDIA}. 
-%%%%%%%% Connect: use (GM) to solve FDIA problem
-The Definition~\ref{Def:Successful_FDIA} defines a target set of successful attack signals of the form: 
+\noindent Here $k$ is the attack sparsity per time index. Classical model-based FDIAs that fool KF/$\chi^2$ monitors \cite{mo2010false} or stronger $\ell_1$ estimators \cite{zheng2021Resilient} are often computationally heavy for online data generation. We therefore use a generative model, in the spirit of GANs \cite{goodfellow2014generative}, to sample from the feasible set
 \begin{equation}\label{equ:success_FDIA_set}
-\mathcal{S}(\alpha,\epsilon) \triangleq \big\{\mathbf{e} \hspace{1mm}|\hspace{1mm} \|M_1\mathbf{e}\|_2 \geq \alpha, \|M_2\mathbf{e}\|_2 \leq \epsilon \big\}.
+\mathcal{S}(\alpha,\epsilon)
+\triangleq
+\big\{\mathbf{e}\ \big|\ \|M_1\mathbf{e}\|_2\geq\alpha,\ \|M_2\mathbf{e}\|_2\leq\epsilon\big\}.
 \end{equation}
-Thus, the goal of \textcolor{blue}{the} generative model is to learn how to generate elements of that set. 
+
 \begin{definition}
-Given a set $\mathcal{S}\subset \mathbb{R}^n$ and a prior distribution $P_z(\mathbf{z})$, a generative model is a mapping of the form $f:\mathbf{z}\mapsto\mathbb{R}^n$ such that $f(\mathbf{z})\in\mathcal{S}$ \textcolor{blue}{with high probability}.
+Given a set $\mathcal{S}\subset\mathbb{R}^n$ and a prior $P_z(\mathbf{z})$, a generative model is a mapping $f:\mathbf{z}\mapsto\mathbb{R}^n$ such that $f(\mathbf{z})\in\mathcal{S}$ with high probability.
 \end{definition}
-We consider a generative model of the form $G(\mathbf{z};\boldsymbol{\theta}_g)$, where $\boldsymbol{\theta}_g$ is a tunable parameter vector that will be prescribed to maximize the likelihood of generating elements in $\mathcal{S}$. Specifically, $G$ is taken as a neural network whose input is a random number $\mathbf{z}$ sampled from a prior distribution $P_z$, with weights and biases contained in $\boldsymbol{\theta}_g$. Next, similarly to the GAN framework, $G(\mathbf{z};\boldsymbol{\theta}_g)$ is trained using a fixed discriminator defined by the boundary functions $\|M_1\mathbf{e}\|_2$ and $\|M_2\mathbf{e}\|_2$ of $\mathcal{S}$.
+We take $G(\mathbf{z};\boldsymbol{\theta}_g)$ as a neural network with parameters $\boldsymbol{\theta}_g$, driven by $\mathbf{z}\sim P_z$. Physics-based discriminators evaluate $\|M_1\mathbf{e}\|_2$ and $\|M_2\mathbf{e}\|_2$ on the generator output, as in Fig.~\ref{fig:GM}.
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=\columnwidth]{image/GM.png}
-    \caption{\textcolor{blue}{Physics-based generative model and training process ($\alpha$ is the lower-bound constraint for attack effectiveness while $\epsilon$ is the upper-bound constraint for attack stealthiness)}}
+    \caption{Physics-based generative model and training process ($\alpha$ is the lower-bound constraint for attack effectiveness against the KF--controller loop, while $\epsilon$ is the upper-bound constraint for stealthiness against the chi-square detector)}
     \label{fig:GM}
 \end{figure}
-%%%%%%%% Use Generative model (GM) to generate elements of a set (Mathematical development)
-The training process is shown in Fig.~\ref{fig:GM}. The output of the generator is passed, through the discriminator boundary functions, to a loss  function designed such that the weights of the generator network are trained to ensure that the outputs of the discriminators satisfy the constraints. Since the constraints are threshold-based, we use an indicator-like loss function:
+
+The indicator-like training loss is
 \begin{equation}
-    J(\mathbf{e}) = \textsf{ReLU}(\alpha - \|M_1\mathbf{e}\|_2)+\textsf{ReLU}(\|M_2\mathbf{e}\|_2 - \epsilon).
+J(\mathbf{e})=\textsf{ReLU}(\alpha-\|M_1\mathbf{e}\|_2)+\textsf{ReLU}(\|M_2\mathbf{e}\|_2-\epsilon),
 \end{equation}
-
-Consequently, the generator is trained by solving the unconstrained optimization problem
+and the generator is trained by
 \begin{align}\label{equ:training_GM}
-    \boldsymbol{\theta}_g^* = \argmin\underset{\mathbf{z}\sim \textbf{P}_z}{\mathbb{E}}J(G(\mathbf{z};\boldsymbol{\theta}_g))
+\boldsymbol{\theta}_g^*=\argmin\underset{\mathbf{z}\sim \textbf{P}_z}{\mathbb{E}}J\big(G(\mathbf{z};\boldsymbol{\theta}_g)\big)
 \end{align}
-via back propagation.
-
-\iffalse
-{\color{red}\textbf{Please update Fig. 1 to reflect the description above. Specifically, replace the Loss Fun with the optimization problem above. Change "Loss Fun" to "training"}}
-\fi
-
-
-
-
-
+via back-propagation. The resulting samples populate the adversarial training set used in Section~\ref{sec:detection_localization}.

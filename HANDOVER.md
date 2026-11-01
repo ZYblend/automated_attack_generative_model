@@ -3,7 +3,7 @@
 **Baseline:** `main` @ merge of [#1](https://github.com/ZYblend/automated_attack_generative_model/pull/1) (sanity-check PDF approved).  
 **Compile:** `pdflatex → bibtex → pdflatex ×2` on `bare_jrnl.tex` → `bare_jrnl.pdf` / `artifacts/initial_paper_sanity_check.pdf` (13 pp).  
 **Sim code (external):** https://github.com/ZYblend/Physics-guided_GAN_Attack_Generation  
-**Do not start content edits until this note is the working plan;** keep editorial `\textcolor{blue}{...}` unless cleaning is requested.
+**Status (2026-11-01):** Content edits for Changes~1–2 are in progress on branch `cursor/kf-chisquare-sparsity-bridge-ac49`. Keep remaining blue editorial markup unless cleaning is requested. Simulation figures are narratively remapped to KF/$\chi^2$; regenerating plots from the MATLAB/Python sim repo is a follow-up if numerical re-runs are required.
 
 ---
 

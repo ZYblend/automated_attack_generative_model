@@ -1,72 +1,54 @@
-%%%%%%%%%%%%%%%%%% System model (Workshop paper, use the IEEE bus system) %%%%%%%% (Yu)
-The \textcolor{blue}{following model} is \textcolor{blue}{used} to describe the physical \textcolor{blue}{process} of a CPS:
+%%%%%%%%%%%%%%%%%% System model: stochastic CPS + Kalman filter + chi-square detector %%%%%%%%
+The following stochastic linear model is used to describe the physical process of a CPS:
 \begin{equation}\label{equ:physical_model}
 \begin{aligned}
-    \mathbf{x}_{i+1} &= A\mathbf{x}_i+B\mathbf{u}_i\\
-    \mathbf{y}_i &= C\mathbf{x}_i\\
+    \mathbf{x}_{i+1} &= A\mathbf{x}_i+B\mathbf{u}_i+\mathbf{w}_i,\\
+    \mathbf{y}_i &= C\mathbf{x}_i+\mathbf{v}_i,
  \end{aligned}
 \end{equation}
-where $\mathbf{x}_i \in \mathbb{R}^n$ is the state vector, $\mathbf{u}_i \in \mathbb{R}^{p}$ the control input and $\mathbf{y}_i \in \mathbb{R}^{m_1}$ the sensor measurement. The \textcolor{blue}{appropriately dimensioned system matrices $A,B$ and $C$} are assumed to satisfy the following\textcolor{blue}{:}
+where $\mathbf{x}_i \in \mathbb{R}^n$ is the state vector, $\mathbf{u}_i \in \mathbb{R}^{p}$ the control input, and $\mathbf{y}_i \in \mathbb{R}^{m}$ the sensor measurement. The process noise $\mathbf{w}_i\sim\mathcal{N}(\mathbf{0},Q)$ and measurement noise $\mathbf{v}_i\sim\mathcal{N}(\mathbf{0},R)$ are mutually independent white sequences with $Q\succeq 0$ and $R\succ 0$. The appropriately dimensioned system matrices $A,B$ and $C$ are assumed to satisfy the following:
 \begin{enumerate}
-    \item [A1.]{The pair $(A,B)$ is controllable}
-    \item [A2.]{There exists a positive integer $k_0 \leq m_1$ such that the pair $(A,C_{\mathcal{S}})$ is observable for all $\mathcal{S} \subset \left\{1,2,\cdots,m_1\right\}$ with $|\mathcal{S}|\geq k_0$}
-    \item [A3.]{$\rho\left(A^{T}\right)>0$, where the integer $T$ is a specified horizon parameter.}
+    \item [A1.]{The pair $(A,B)$ is controllable.}
+    \item [A2.]{There exists a positive integer $k_0 \leq m$ such that the pair $(A,C_{\mathcal{S}})$ is observable for all $\mathcal{S} \subset \left\{1,2,\cdots,m\right\}$ with $|\mathcal{S}|\geq k_0$.}
+    \item [A3.]{The pair $(A,Q^{1/2})$ is stabilizable.}
 \end{enumerate}
+Assumption~A2 encodes a quantitative redundancy level of the sensing network: any subset of at least $k_0$ sensors preserves observability. This sparsity--observability threshold will be linked to estimation error and detection precision in Sections~\ref{sec:detection_localization} and~\ref{sec:resilient_estimator}.
 
-To estimate the system states from sensor measurements, the following receding horizon observer is considered:
-\begin{align}\label{equ:state_propogation_forward}
-    \hat{\mathbf{x}}_i = A^T\mathbf{z} + F\mathbf{u}_{I-1},
-\end{align}
-where 
-\begin{align*}
-    F = \begin{bmatrix}A^{T-1}B & A^{T-2}B &\hdots & B\end{bmatrix},
-\end{align*}
-and
-\begin{align}\label{equ:RHE}
-    \mathbf{z} &= \argmin_{\mathbf{x}\in\mathbb{R}^n}\|\mathbf{y}_{I}-H_1\mathbf{u}_{I-1} - H_0\mathbf{x}\|_2\\ \nonumber
-    &= H_0^\dagger\mathbf{y}_{I} - H_0^\dagger H_1\mathbf{u}_{I-1},
-\end{align}
-where 
-\begin{equation}\label{equ:H0_H1}
-\begin{aligned}
-H_0 & =  \begin{bmatrix}CA\\ C A^2 \\ \vdots \\ CA^{T}\end{bmatrix}\\
-H_1 & = \begin{bmatrix}CB & 0 & \cdots& 0 \\ CAB & CB& \cdots&  0\\ \vdots & \vdots & \ddots &  \vdots\\ CA^{T-1}B & CA^{T-2}B & \cdots & CB\end{bmatrix}.
-\end{aligned}\end{equation} 
-Thus,
-\begin{align}\label{equ:state_estimate}
-    \hat{\mathbf{x}}_i = A^TH_0^\dagger\mathbf{y}_{I} + \left(F-A^TH_0^\dagger H_1\right)\mathbf{u}_{I-1}.
-\end{align}
-Consequently, the following control law is considered:
-\begin{equation}\label{equ:controller}
-\begin{aligned}
-        \mathbf{u}_i &= K_p\hat{\mathbf{x}}_i,
-\end{aligned}
-\end{equation}
-where $\hat{\mathbf{x}}_i \in\mathbb{R}^n$ is the state estimate in \eqref{equ:state_estimate}, which is \textcolor{blue}{well-known} (see \cite{alessandri2003receding} for example) to achieve $\lim\limits_{i\rightarrow\infty}\left\|\hat{\mathbf{x}}_i-\mathbf{x}_i\right\|_2 = 0$, and the gain matrix $K_p$ is designed to achieve $\rho\left(A+BK_p\right)\in\left(0,\hspace{1mm}1\right)$. 
-Substituting \eqref{equ:controller} into the dynamics in \eqref{equ:physical_model} yields 
-\begin{align*}
-    \mathbf{x}_{i+1} &= A\mathbf{x}_i + BK_p\hat{\mathbf{x}}_i\\
-                     &= \left(A+BK_p\right)\mathbf{x}_i + BK_p\left(\hat{\mathbf{x}}_i-\mathbf{x}_i\right),
-\end{align*}
-which implies that
-\begin{align*}
-    \mathbf{x}_i = \left(A+BK_p\right)^i\mathbf{x}_0 + \sum\limits_{j=0}^i{\left(A+BK_p\right)^{i-j}BK_p\left(\hat{\mathbf{x}}_j-\mathbf{x}_j\right)}.
-\end{align*}
-Thus, 
-\begin{align*}
-    \sum\limits_{i=0}^\infty{\left\|\mathbf{x}_i\right\|_2}&\le\left(\sum\limits_{i=0}^\infty\rho\left(\left(A+BK_p\right)^i\right)\right)\left\|\mathbf{x}_0\right\|_2 \\&\hspace{2mm}+ \sum\limits_{i=0}^\infty\sum\limits_{j=0}^i\rho\left(\left(A+BK_p\right)^{i-j}BK_p\right)\left\|\hat{\mathbf{x}}_j-\mathbf{x}_j\right\|_2.
-\end{align*}
-\textcolor{blue}{Since $\rho(A+BK) \in (0,1)$, then $\displaystyle \sum_{i=0}^{\infty}\rho\left((A+BK)^i\right) \leq \sum_{i=0}^{\infty}\left(\rho(A+BK)\right)^i < \infty$}\footnote{\textcolor{blue}{For any $\beta\in (0,1)$, $\displaystyle \sum_{i=0}^{\infty}\beta^i=\lim_{N\rightarrow\infty}\sum_{i=0}^{N}\beta^i = \lim_{N\rightarrow\infty}\frac{1-\beta^{N+1}}{1-\beta} = \frac{1}{1-\beta}< \infty$}}. Therefore, the resulting \textcolor{blue}{closed-loop} dynamics \textcolor{blue}{satisfies} \textcolor{blue}{$$\sum\limits_{i=0}^\infty\left\|\mathbf{x}_i\right\|_2\le \alpha_0 \|\mathbf{x}_0\|_2 + \varphi\left(\sum\limits_{i=0}^\infty\left\|\hat{\mathbf{x}}_i-\mathbf{x}_i\right\|_2\right)$$ }
-for \textcolor{blue}{a} positive constant $\alpha_0<\infty$ and a class $\mathcal{K}$ functional $\varphi$. \textcolor{blue}{Since $\hat{\mathbf{x}}_i \rightarrow \mathbf{x}_i$, it follows} that the origin of the \textcolor{blue}{closed-loop} dynamics is asymptotically stable \textcolor{blue}{\cite{rawlings2017model}}.
-
-\iffalse
-Let $\tilde{\mathbf{x}}_i \triangleq \mathbf{x}_i - \hat{\mathbf{x}}_i$, then the closed loop system is given by
+\subsection{Kalman filter}
+Under A2--A3, the minimum-variance linear estimator of \eqref{equ:physical_model} is the Kalman filter (KF). Let $\hat{\mathbf{x}}_{i|i-1}$ and $P_{i|i-1}$ denote the predicted state and covariance. The prediction and update steps are
 \begin{align}
-    \mathbf{x}_{i+1} = \bar{A}\mathbf{x}_i - \bar{B}\tilde{\mathbf{x}}_i,
+\hat{\mathbf{x}}_{i|i-1} &= A\hat{\mathbf{x}}_{i-1|i-1}+B\mathbf{u}_{i-1}, \label{equ:kf_predict}\\
+P_{i|i-1} &= AP_{i-1|i-1}A^{\top}+Q, \label{equ:kf_Ppred}\\
+\mathbf{r}_i &= \mathbf{y}_i-C\hat{\mathbf{x}}_{i|i-1}, \label{equ:innovation}\\
+S_i &= CP_{i|i-1}C^{\top}+R, \label{equ:innov_cov}\\
+K_i &= P_{i|i-1}C^{\top}S_i^{-1}, \label{equ:kf_gain}\\
+\hat{\mathbf{x}}_{i|i} &= \hat{\mathbf{x}}_{i|i-1}+K_i\mathbf{r}_i, \label{equ:kf_update}\\
+P_{i|i} &= \left(I-K_iC\right)P_{i|i-1}. \label{equ:kf_Pupdate}
 \end{align}
-where $\Bar{A} = A+BK_p$ and $\Bar{B} = BK_p$. Iterating the difference equation above $T$ steps forward yields
-\begin{equation*}
-    \mathbf{x}_{1:T} = \begin{bmatrix}\Bar{A}\\ \Bar{A}^2 \\ \vdots \\ \Bar{A}^T\end{bmatrix}\mathbf{x}_0 + \begin{bmatrix}\Bar{B} & & &  \\ \Bar{A}\Bar{B} & \Bar{B}& &  \\ \vdots & \vdots & \ddots &  \\ \Bar{A}^{T-1}\Bar{B} & \Bar{A}^{T-2}\Bar{B} & \cdots & \Bar{B}\end{bmatrix}\tilde{\mathbf{x}}_{0:T-1}.
-\end{equation*}
-\fi
+The innovation $\mathbf{r}_i$ in \eqref{equ:innovation} is zero-mean Gaussian with covariance $S_i$ in the attack-free case. When the filter operates in steady state, $P_{i|i-1}\to P^-$, $K_i\to K$, and $S_i\to S=CP^-C^{\top}+R$, where $P^-$ solves the discrete algebraic Riccati equation associated with $(A,C,Q,R)$. For notational convenience we write $\hat{\mathbf{x}}_i\triangleq\hat{\mathbf{x}}_{i|i}$ for the filtered estimate used by the controller.
 
+\subsection{Chi-square bad-data detector}
+Because $\mathbf{r}_i\sim\mathcal{N}(\mathbf{0},S_i)$ under the nominal hypothesis $\mathcal{H}_0$ (no attack), the normalized innovation squared
+\begin{equation}\label{equ:chisq_stat}
+g_i \triangleq \mathbf{r}_i^{\top}S_i^{-1}\mathbf{r}_i
+\end{equation}
+follows a chi-square distribution with $m$ degrees of freedom. A chi-square detector with false-alarm rate $\beta$ is
+\begin{equation}\label{equ:chisq_detector}
+\textsf{BDD}(\mathbf{y}_i)=\begin{cases}
+0,&\text{if } g_i\le\tau_{\chi^2}(\beta),\\
+1,&\text{otherwise,}
+\end{cases}
+\end{equation}
+where the threshold $\tau_{\chi^2}(\beta)$ is the $(1-\beta)$-quantile of $\chi^2_m$. Equivalently, over a moving window $I=[i-T+1,i]$ one may use the cumulative statistic $g_I=\sum_{j\in I}g_j\sim\chi^2_{Tm}$ under $\mathcal{H}_0$. Unlike a purely residual-norm test, \eqref{equ:chisq_detector} accounts for the innovation covariance and admits an explicit probabilistic false-alarm specification.
+
+\subsection{Closed-loop control}
+The following certainty-equivalence control law is considered:
+\begin{equation}\label{equ:controller}
+\mathbf{u}_i = K_p\hat{\mathbf{x}}_i,
+\end{equation}
+where the gain $K_p$ is designed so that $\rho(A+BK_p)\in(0,1)$. Substituting \eqref{equ:controller} into \eqref{equ:physical_model} yields
+\begin{align*}
+\mathbf{x}_{i+1}
+&=\left(A+BK_p\right)\mathbf{x}_i+BK_p\left(\hat{\mathbf{x}}_i-\mathbf{x}_i\right)+\mathbf{w}_i.
+\end{align*}
+Hence, when the KF estimation error remains mean-square bounded, the closed-loop state is mean-square bounded as well. In particular, under A1--A3 and attack-free measurements, $\mathbb{E}\|\hat{\mathbf{x}}_i-\mathbf{x}_i\|_2^2=\mathrm{tr}(P_{i|i})$ converges to the steady-state filtered covariance, and the origin of the mean closed-loop dynamics is asymptotically stable \cite{anderson2012optimal,rawlings2017model}.
