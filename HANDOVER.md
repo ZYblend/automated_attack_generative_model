@@ -1,9 +1,9 @@
 # Hand-over: next paper revisions
 
 **Baseline:** `main` @ merge of [#1](https://github.com/ZYblend/automated_attack_generative_model/pull/1) (sanity-check PDF approved).  
-**Compile:** `pdflatex → bibtex → pdflatex ×2` on `bare_jrnl.tex` → `bare_jrnl.pdf` / `artifacts/initial_paper_sanity_check.pdf` (13 pp).  
+**Compile:** `pdflatex → bibtex → pdflatex ×2` on `bare_jrnl.tex` → `bare_jrnl.pdf`; revised artifact: `artifacts/kf_chisquare_revision.pdf` (7 pp).  
 **Sim code (external):** https://github.com/ZYblend/Physics-guided_GAN_Attack_Generation  
-**Do not start content edits until this note is the working plan;** keep editorial `\textcolor{blue}{...}` unless cleaning is requested.
+**Status (2026-11-01):** The authoritative revised sections use `*_revised.tex` files on branch `cursor/kf-chisquare-sparsity-bridge-ac49`. The theory has been rewritten for KF/$\chi^2$ consistency. Archived simulations support only empirical observability and legacy data-augmentation results; they are not presented as numerical validation of the revised generator, calibrated selector, or subset KF.
 
 ---
 

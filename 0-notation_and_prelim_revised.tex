@@ -1,0 +1,11 @@
+The sets of real numbers, real $n$-vectors, and real $m\times n$ matrices are denoted by $\mathbb{R}$, $\mathbb{R}^n$, and $\mathbb{R}^{m\times n}$, respectively. For a matrix $X$, $X^\top$, $X^\dagger$, $\rho(X)$, and $\operatorname{tr}(X)$ denote its transpose, Moore--Penrose inverse, spectral radius, and trace. The identity matrix of dimension $n$ is denoted by $I_n$. For symmetric matrices, $X\succeq0$ and $X\succ0$ denote positive semidefiniteness and positive definiteness.
+
+For an index set $\mathcal S$, $X_{\mathcal S}$ denotes the submatrix formed from the rows of $X$ indexed by $\mathcal S$, and $\mathcal S^c$ denotes its complement relative to the applicable sensor set. The cardinality of $\mathcal S$ is $|\mathcal S|$. The support and zero norm of a vector are
+\[
+\operatorname{supp}(\mathbf{x})=\{j:x_j\neq0\},
+\qquad
+\|\mathbf{x}\|_0=|\operatorname{supp}(\mathbf{x})|.
+\]
+A vector is $k$-sparse if $\|\mathbf{x}\|_0\le k$. A time window containing $T$ samples and ending at index $i$ is denoted by $\mathcal I=[i-T+1,i]$. Stacked quantities over this window carry the subscript $\mathcal I$.
+
+The expectation and probability operators are denoted by $\mathbb{E}$ and $\Pr$, respectively. The Gaussian distribution with mean $\boldsymbol{\mu}$ and covariance $P$ is $\mathcal{N}(\boldsymbol{\mu},P)$. The central and noncentral chi-square distributions with $\nu$ degrees of freedom and noncentrality parameter $\lambda$ are denoted by $\chi_\nu^2$ and $\chi_\nu^{\prime2}(\lambda)$. Their cumulative distribution functions are denoted by $F_{\chi_\nu^2}$ and $F_{\chi_\nu^{\prime2}(\lambda)}$.
